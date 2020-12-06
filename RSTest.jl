@@ -21,19 +21,35 @@ for k in 1:length(maps)
     println(k)
 
     # For AdaOPS
-    fl_bounds = AdaOPS.IndependentBounds(FORollout(move_east), 10, check_terminal=true, consistency_fix_thresh=1e-5)
-    flpu_bounds = AdaOPS.IndependentBounds(FORollout(move_east), POValue(QMDPSolver(max_iterations=1000)), check_terminal=true, consistency_fix_thresh=1e-5)
+    fl_bounds = AdaOPS.IndependentBounds(FORollout(move_east), 40, check_terminal=true, consistency_fix_thresh=1e-5)
     flfu_bounds = AdaOPS.IndependentBounds(FORollout(move_east), FOValue(ValueIterationSolver(max_iterations=1000)), check_terminal=true, consistency_fix_thresh=1e-5)
+    flpu_bounds = AdaOPS.IndependentBounds(FORollout(move_east), POValue(QMDPSolver(max_iterations=1000)), check_terminal=true, consistency_fix_thresh=1e-5)
+    # plpu_bounds = AdaOPS.IndependentBounds(POValue(SARSOPSolver(fast=true, timeout=100.0)), POValue(QMDPSolver(max_iterations=1000)), check_terminal=true, consistency_fix_thresh=1e-5)
+
+    # pomdp = rsgen(maps[k])
+    # b0 = initialstate(pomdp)
+    # solver = AdaOPSSolver(epsilon_0=0.1,
+    #                       bounds=plpu_bounds,
+    #                       rng=MersenneTwister(4),
+    #                       k_min=maps[k][2],
+    #                       zeta=0.5
+    #                      )
+    # @time p = solve(solver, pomdp)
+    # D, extra_info = build_tree_test(p, b0)
+    # extra_info_analysis(extra_info)
+    # inchrome(D3Tree(D))
 
     adaops_list = [:default_action=>[move_east,],
-                :bounds=>[fl_bounds, flpu_bounds, flfu_bounds],
+                # :bounds=>[fl_bounds, flpu_bounds, flfu_bounds, plpu_bounds],
+                :bounds=>[fl_bounds, flpu_bounds, flfu_bounds, ],
                 :delta=>[0.1, 0.3, 1.0],
                 :grid=>[nothing],
                 :k_min=>[maps[k][2]],
                 :zeta=>[0.3, 0.4, 0.5]
                 ]
     adaops_list_labels = [["MoveEast",],
-                        ["(FO_MoveEast, 10)", "(FO_MoveEast, QMDP)", "(FO_MoveEast, MDP)"],
+                        # ["(FO_MoveEast, 40)", "(FO_MoveEast, QMDP)", "(FO_MoveEast, MDP)", "(SARSOP, QMDP)"],
+                        ["(FO_MoveEast, 40)", "(FO_MoveEast, QMDP)", "(FO_MoveEast, MDP)"],
                         [0.1, 0.3, 1.0],
                         ["NullGrid"],
                         [maps[k][2]],
@@ -41,48 +57,65 @@ for k in 1:length(maps)
                         ]
 
     # For PL-DESPOT
-    bounds = PL_DESPOT.IndependentBounds(DefaultPolicyLB(move_east), 40.0, check_terminal=true)
-    bounds_ub = PL_DESPOT.IndependentBounds(DefaultPolicyLB(move_east), FullyObservableValueUB(ValueIterationSolver(max_iterations=1000)), check_terminal=true, consistency_fix_thresh=1e-5)
+    bounds = PL_DESPOT.IndependentBounds(PL_DESPOT.DefaultPolicyLB(move_east), 40.0, check_terminal=true)
+    bounds_ub = PL_DESPOT.IndependentBounds(PL_DESPOT.DefaultPolicyLB(move_east), PL_DESPOT.FullyObservableValueUB(ValueIterationSolver(max_iterations=1000)), check_terminal=true, consistency_fix_thresh=1e-5)
+
     pldespot_list = [:default_action=>[move_east,], 
-                        :bounds=>[bounds,],
+                        :bounds=>[bounds, bounds_ub],
                         :K=>[100, 300],
                         :C=>[Inf, 10., 20., 30.],
                         :beta=>[0.0, 0.1, 0.3]]
     pldespot_list_labels = [["MoveEast",], 
-                        ["MoveEastLB_FixedUB",],
+                        ["(MoveEast, 40)", "(MoveEast, MDP)"],
                         [100, 300],
                         [Inf, 10., 20., 30.],
                         [0.0, 0.1, 0.3]]
-    # end
+
+    # For ARDESPOT
+    bounds = ARDESPOT.IndependentBounds(ARDESPOT.DefaultPolicyLB(move_east), 40.0, check_terminal=true)
+    bounds_ub = ARDESPOT.IndependentBounds(ARDESPOT.DefaultPolicyLB(move_east), ARDESPOT.FullyObservableValueUB(ValueIterationSolver(max_iterations=1000)), check_terminal=true, consistency_fix_thresh=1e-5)
+
+    ardespot_list = [:default_action=>[move_east,], 
+                        :bounds=>[bounds, bounds_ub],
+                        :K=>[100, 300],
+                    ]
+    ardespot_list_labels = [["MoveEast",], 
+                            ["(MoveEast, 40)", "(MoveEast, MDP)"],
+                            [100, 300],
+                            ]
+
     # For POMCPOW
-    # random_value_estimator = FORollout(RandomPolicy(pomdp))
+    random_value_estimator = FORollout(RandomPolicy(pomdp))
     value_estimator = FORollout(move_east)
     pomcpow_list = [:default_action=>[move_east,],
-                        :estimate_value=>[value_estimator],
+                        :estimate_value=>[value_estimator, random_value_estimator],
                         :tree_queries=>[200000,], 
                         :max_time=>[1.0,],
                         :criterion=>[MaxUCB(10.),]]
     pomcpow_list_labels = [["MoveEast",],
-                        ["MoveEastRollout"],
+                        ["MoveEastRollout", "RandomRollout"],
                         [200000,], 
                         [1.0,],
                         [MaxUCB(10.),]]
 
     # Solver list
     solver_list = [
-        # PL_DESPOTSolver=>pldespot_list, 
-        # POMCPOWSolver=>pomcpow_list,
+        PL_DESPOTSolver=>pldespot_list, 
+        DESPOTSolver=>ardespot_list, 
+        POMCPOWSolver=>pomcpow_list,
         AdaOPSSolver=>adaops_list,
     ]
     solver_list_labels = [
-        # pldespot_list_labels, 
-        # pomcpow_list_labels,
+        pldespot_list_labels, 
+        ardespot_list_labels,
+        pomcpow_list_labels,
         adaops_list_labels,
     ]
 
     solver_labels = [
-        # "PL-DESPOT",
-        # "POMCPOW",
+        "PL-DESPOT",
+        "ARDESPOT",
+        "POMCPOW",
         "AdaOPS",
     ]
 
@@ -94,6 +127,7 @@ for k in 1:length(maps)
                         solver_labels=solver_labels,
                         solver_list_labels=solver_list_labels,
                         belief_updater=(m)->BasicParticleFilter(m, POMDPResampler(30000), 30000),
+                        max_queue_length=300,
                         experiment_label="RS1000$(maps[k])",
                         full_factorial_design=true)do 
                             rsgen(maps[k])

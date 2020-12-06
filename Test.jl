@@ -1,5 +1,5 @@
 # global variables
-max_workers = 8
+max_workers = 11
 
 # set up parallel environment
 using Pkg
@@ -20,6 +20,9 @@ cd("results")
     # Solver
     using PL_DESPOT
     using AdaOPS
+    using ARDESPOT
+    # using SARSOP
+    # using PointBasedValueIteration
     using BasicPOMCP
     using POMCPOW
     using QMDP
@@ -98,9 +101,29 @@ end
     PL_DESPOT.IndependentBounds(lower, upper, bounds.check_terminal, bounds.consistency_fix_thresh)
 end
 
-@everywhere function ParallelExperiment.init_param(m, bound::FullyObservableValueUB)
+@everywhere function ParallelExperiment.init_param(m, bound::PL_DESPOT.FullyObservableValueUB)
     policy = typeof(bound.p) <: Solver ? solve(bound.p, UnderlyingMDP(m)) : bound.p
-    FullyObservableValueUB(policy)
+    PL_DESPOT.FullyObservableValueUB(policy)
+end
+
+@everywhere function ParallelExperiment.init_param(m, bounds::ARDESPOT.IndependentBounds)
+    lower = init_param(m, bounds.lower)
+    upper = init_param(m, bounds.upper)
+    ARDESPOT.IndependentBounds(lower, upper, bounds.check_terminal, bounds.consistency_fix_thresh)
+end
+
+@everywhere function ParallelExperiment.init_param(m, bound::ARDESPOT.FullyObservableValueUB)
+    policy = typeof(bound.p) <: Solver ? solve(bound.p, UnderlyingMDP(m)) : bound.p
+    ARDESPOT.FullyObservableValueUB(policy)
+end
+
+@everywhere function ParticleFilters.unnormalized_util(p::AlphaVectorPolicy, b::WPFBelief)
+    util = zeros(length(p.alphas))
+    for (i, s) in enumerate(particles(b))
+        j = stateindex(p.pomdp, s)
+        util += weight(b, i)*getindex.(p.alphas, (j,))
+    end
+    return util
 end
 
 include("RSTest.jl")

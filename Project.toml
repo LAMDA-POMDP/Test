@@ -1,4 +1,5 @@
 [deps]
+ARDESPOT = "d96c9ae4-3372-47d5-8a88-316ae77be8cf"
 AdaOPS = "eadfb9d8-44f1-454c-a5eb-0663ee7d74a1"
 BasicPOMCP = "d721219e-3fc6-5570-a8ef-e5402f47c49e"
 BeliefUpdaters = "8bb6e9a1-7d73-552c-a44a-e5dc5634aac4"
@@ -13,7 +14,6 @@ Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
 Fontconfig = "186bb1d3-e1f7-5a2c-a377-96d770f13627"
 GlobalApproximationValueIteration = "277f244e-4908-11e9-33c2-5d5365097ef8"
 IncrementalPruning = "82ee451e-1805-57fd-b4f9-e90c19bcb3e9"
-LaserTag = "40beb472-b4db-4f0b-8d48-5bd2f96ebe44"
 LocalApproximationValueIteration = "a40420fb-f401-52da-a663-f502e5b95060"
 MCVI = "30d33687-f7ed-5b0d-8b26-3dc9b7abd572"
 PL_DESPOT = "e87855f3-d877-40b7-8600-5f1cc2d263ad"
