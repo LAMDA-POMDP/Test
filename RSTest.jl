@@ -30,7 +30,6 @@ for k in 1:length(maps)
     # b0 = initialstate(pomdp)
     # solver = AdaOPSSolver(epsilon_0=0.1,
     #                       bounds=plpu_bounds,
-    #                       rng=MersenneTwister(4),
     #                       k_min=maps[k][2],
     #                       zeta=0.5
     #                      )
@@ -44,14 +43,16 @@ for k in 1:length(maps)
                 :delta=>[0.1, 0.3, 1.0],
                 :grid=>[nothing],
                 :k_min=>[maps[k][2]],
-                :zeta=>[0.3, 0.4, 0.5]
+                :zeta=>[0.1, 0.3, 0.5],
+                :xi=>[0.95, 0.3, 0.1],
                 ]
     adaops_list_labels = [["MoveEast",],
                         (k==1 ? ["(FO_MoveEast, $(maps[k][2]*10+10))", "(FO_MoveEast, QMDP)", "(FO_MoveEast, MDP)"] : (k==2 ? ["(FO_MoveEast, $(maps[k][2]*10+10))", "(FO_MoveEast, MDP)"] : ["(FO_MoveEast, $(maps[k][2]*10+10))"])),
                         [0.1, 0.3, 1.0],
                         ["NullGrid"],
                         [maps[k][2]],
-                        [0.3, 0.4, 0.5]
+                        [0.1, 0.3, 0.5],
+                        [0.95, 0.3, 0.1],
                         ]
 
     # For PL-DESPOT
@@ -61,11 +62,13 @@ for k in 1:length(maps)
     pldespot_list = [:default_action=>[move_east,], 
                         :bounds=>(k==3 ? [bounds] : [bounds, bounds_ub]),
                         :K=>[100, 300],
+                        :lambda=>[0.0, 0.01, 0.1],
                         :C=>[Inf, 10., 20., 30.],
                         :beta=>[0.0, 0.1, 0.3]]
     pldespot_list_labels = [["MoveEast",], 
                         k==3 ? ["(MoveEast, $(maps[k][2]*10+10))"] : ["(MoveEast, $(maps[k][2]*10+10))", "(MoveEast, MDP)"],
                         [100, 300],
+                        [0.0, 0.01, 0.1],
                         [Inf, 10., 20., 30.],
                         [0.0, 0.1, 0.3]]
 
@@ -76,10 +79,12 @@ for k in 1:length(maps)
     ardespot_list = [:default_action=>[move_east,], 
                         :bounds=>(k==3 ? [bounds] : [bounds, bounds_ub]),
                         :K=>[100, 300],
+                        :lambda=>[0.0, 0.01, 0.1],
                     ]
     ardespot_list_labels = [["MoveEast",], 
                             k==3 ? ["(MoveEast, $(maps[k][2]*10+10))"] : ["(MoveEast, $(maps[k][2]*10+10))", "(MoveEast, MDP)"],
                             [100, 300],
+                            [0.0, 0.01, 0.1],
                             ]
 
     # For POMCPOW
