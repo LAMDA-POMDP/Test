@@ -15,14 +15,14 @@ move_east = FunctionPolicy() do b
     return 2
 end
 
-# maps = [(7, 8), (11, 11), (15, 15)]
-maps = [(7, 8),]
+maps = [(7, 8), (11, 11), (15, 15)]
+# maps = [(7, 8),]
 for k in 1:length(maps)
     println(k)
 
     # For AdaOPS
-    fl_bounds = AdaOPS.IndependentBounds(FORollout(move_east), 40, check_terminal=true, consistency_fix_thresh=1e-5)
-    flfu_bounds = AdaOPS.IndependentBounds(FORollout(move_east), FOValue(ValueIterationSolver(max_iterations=1000)), check_terminal=true, consistency_fix_thresh=1e-5)
+    fl_bounds = AdaOPS.IndependentBounds(FORollout(move_east), maps[k][2]*10+10, check_terminal=true, consistency_fix_thresh=1e-5)
+    flfu_bounds = AdaOPS.IndependentBounds(FORollout(move_east), FOValue(ValueIterationSolver(max_iterations=1000, include_Q=false)), check_terminal=true, consistency_fix_thresh=1e-5)
     flpu_bounds = AdaOPS.IndependentBounds(FORollout(move_east), POValue(QMDPSolver(max_iterations=1000)), check_terminal=true, consistency_fix_thresh=1e-5)
     # plpu_bounds = AdaOPS.IndependentBounds(POValue(SARSOPSolver(fast=true, timeout=100.0)), POValue(QMDPSolver(max_iterations=1000)), check_terminal=true, consistency_fix_thresh=1e-5)
 
@@ -40,16 +40,14 @@ for k in 1:length(maps)
     # inchrome(D3Tree(D))
 
     adaops_list = [:default_action=>[move_east,],
-                # :bounds=>[fl_bounds, flpu_bounds, flfu_bounds, plpu_bounds],
-                :bounds=>[fl_bounds, flpu_bounds, flfu_bounds, ],
+                :bounds=>(k==1 ? [fl_bounds, flpu_bounds, flfu_bounds, ] : (k==2 ? [fl_bounds, flfu_bounds] : [fl_bounds])),
                 :delta=>[0.1, 0.3, 1.0],
                 :grid=>[nothing],
                 :k_min=>[maps[k][2]],
                 :zeta=>[0.3, 0.4, 0.5]
                 ]
     adaops_list_labels = [["MoveEast",],
-                        # ["(FO_MoveEast, 40)", "(FO_MoveEast, QMDP)", "(FO_MoveEast, MDP)", "(SARSOP, QMDP)"],
-                        ["(FO_MoveEast, 40)", "(FO_MoveEast, QMDP)", "(FO_MoveEast, MDP)"],
+                        (k==1 ? ["(FO_MoveEast, $(maps[k][2]*10+10))", "(FO_MoveEast, QMDP)", "(FO_MoveEast, MDP)"] : (k==2 ? ["(FO_MoveEast, $(maps[k][2]*10+10))", "(FO_MoveEast, MDP)"] : ["(FO_MoveEast, $(maps[k][2]*10+10))"])),
                         [0.1, 0.3, 1.0],
                         ["NullGrid"],
                         [maps[k][2]],
@@ -57,45 +55,47 @@ for k in 1:length(maps)
                         ]
 
     # For PL-DESPOT
-    bounds = PL_DESPOT.IndependentBounds(PL_DESPOT.DefaultPolicyLB(move_east), 40.0, check_terminal=true)
-    bounds_ub = PL_DESPOT.IndependentBounds(PL_DESPOT.DefaultPolicyLB(move_east), PL_DESPOT.FullyObservableValueUB(ValueIterationSolver(max_iterations=1000)), check_terminal=true, consistency_fix_thresh=1e-5)
+    bounds = PL_DESPOT.IndependentBounds(PL_DESPOT.DefaultPolicyLB(move_east), maps[k][2]*10+10.0, check_terminal=true)
+    bounds_ub = PL_DESPOT.IndependentBounds(PL_DESPOT.DefaultPolicyLB(move_east), PL_DESPOT.FullyObservableValueUB(ValueIterationSolver(max_iterations=1000, include_Q=false)), check_terminal=true, consistency_fix_thresh=1e-5)
 
     pldespot_list = [:default_action=>[move_east,], 
-                        :bounds=>[bounds, bounds_ub],
+                        :bounds=>(k==3 ? [bounds] : [bounds, bounds_ub]),
                         :K=>[100, 300],
                         :C=>[Inf, 10., 20., 30.],
                         :beta=>[0.0, 0.1, 0.3]]
     pldespot_list_labels = [["MoveEast",], 
-                        ["(MoveEast, 40)", "(MoveEast, MDP)"],
+                        k==3 ? ["(MoveEast, $(maps[k][2]*10+10))"] : ["(MoveEast, $(maps[k][2]*10+10))", "(MoveEast, MDP)"],
                         [100, 300],
                         [Inf, 10., 20., 30.],
                         [0.0, 0.1, 0.3]]
 
     # For ARDESPOT
-    bounds = ARDESPOT.IndependentBounds(ARDESPOT.DefaultPolicyLB(move_east), 40.0, check_terminal=true)
-    bounds_ub = ARDESPOT.IndependentBounds(ARDESPOT.DefaultPolicyLB(move_east), ARDESPOT.FullyObservableValueUB(ValueIterationSolver(max_iterations=1000)), check_terminal=true, consistency_fix_thresh=1e-5)
+    bounds = ARDESPOT.IndependentBounds(ARDESPOT.DefaultPolicyLB(move_east), maps[k][2]*10+10.0, check_terminal=true)
+    bounds_ub = ARDESPOT.IndependentBounds(ARDESPOT.DefaultPolicyLB(move_east), ARDESPOT.FullyObservableValueUB(ValueIterationSolver(max_iterations=1000, include_Q=false)), check_terminal=true, consistency_fix_thresh=1e-5)
 
     ardespot_list = [:default_action=>[move_east,], 
-                        :bounds=>[bounds, bounds_ub],
+                        :bounds=>(k==3 ? [bounds] : [bounds, bounds_ub]),
                         :K=>[100, 300],
                     ]
     ardespot_list_labels = [["MoveEast",], 
-                            ["(MoveEast, 40)", "(MoveEast, MDP)"],
+                            k==3 ? ["(MoveEast, $(maps[k][2]*10+10))"] : ["(MoveEast, $(maps[k][2]*10+10))", "(MoveEast, MDP)"],
                             [100, 300],
                             ]
 
     # For POMCPOW
-    random_value_estimator = FORollout(RandomPolicy(pomdp))
+    random_value_estimator = FORollout(RandomSolver())
     value_estimator = FORollout(move_east)
     pomcpow_list = [:default_action=>[move_east,],
                         :estimate_value=>[value_estimator, random_value_estimator],
                         :tree_queries=>[200000,], 
                         :max_time=>[1.0,],
+                        :enable_action_pw=>[false, true],
                         :criterion=>[MaxUCB(10.),]]
     pomcpow_list_labels = [["MoveEast",],
                         ["MoveEastRollout", "RandomRollout"],
                         [200000,], 
                         [1.0,],
+                        [false, true],
                         [MaxUCB(10.),]]
 
     # Solver list

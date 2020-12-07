@@ -20,9 +20,11 @@ version = "0.3.3"
 
 [[AdaOPS]]
 deps = ["BasicPOMCP", "BeliefUpdaters", "CPUTime", "D3Trees", "Distributions", "LinearAlgebra", "MCTS", "POMDPLinter", "POMDPModelTools", "POMDPPolicies", "POMDPSimulators", "POMDPs", "Parameters", "ParticleFilters", "Printf", "Random"]
-path = "../AdaOPS.jl"
+git-tree-sha1 = "1cc8c35b249faec21bb08fb1f4477284a113d5d8"
+repo-rev = "main"
+repo-url = "git@github.com:AutomobilePOMDP/AdaOPS.jl.git"
 uuid = "eadfb9d8-44f1-454c-a5eb-0663ee7d74a1"
-version = "0.2.1"
+version = "0.2.3"
 
 [[Adapt]]
 deps = ["LinearAlgebra"]
@@ -59,6 +61,11 @@ deps = ["Pkg"]
 git-tree-sha1 = "c30985d8821e0cd73870b17b0ed0ce6dc44cb744"
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
 version = "1.3.0"
+
+[[AutoHashEquals]]
+git-tree-sha1 = "45bb6705d93be619b81451bb2006b7ee5d4e4453"
+uuid = "15f4f7f2-30c1-5605-9d31-71845cf9641f"
+version = "0.2.0"
 
 [[BFloat16s]]
 deps = ["LinearAlgebra", "Test"]
@@ -155,9 +162,9 @@ version = "0.9.0"
 
 [[ChainRules]]
 deps = ["ChainRulesCore", "ChainRulesTestUtils", "Compat", "LinearAlgebra", "Random", "Reexport", "Requires", "Statistics"]
-git-tree-sha1 = "f034ac3dac255b543788bc170713f40a87efe9bf"
+git-tree-sha1 = "a2f58e82d31b8f934d8038d3a735a2c938642084"
 uuid = "082447d4-558c-5d27-93f4-14fc19e9eca2"
-version = "0.7.34"
+version = "0.7.35"
 
 [[ChainRulesCore]]
 deps = ["LinearAlgebra", "MuladdMacro", "SparseArrays"]
@@ -167,9 +174,9 @@ version = "0.9.22"
 
 [[ChainRulesTestUtils]]
 deps = ["ChainRulesCore", "Compat", "FiniteDifferences", "LinearAlgebra", "Random", "Test"]
-git-tree-sha1 = "1acd5ce374b8fe74fa01a0dfc5ca4f42b3b070bf"
+git-tree-sha1 = "47ad20146e0c0275a0d22b0c62c5ab74fc0cc879"
 uuid = "cdddcdb0-9152-4a09-a978-84456f9df70a"
-version = "0.5.4"
+version = "0.5.5"
 
 [[Clp]]
 deps = ["BinaryProvider", "CEnum", "Clp_jll", "Libdl", "MathOptInterface", "SparseArrays"]
@@ -583,6 +590,12 @@ git-tree-sha1 = "b84ab8139afde82c7c65ba2b792fe12e01dd7307"
 uuid = "7d188eb4-7ad8-530c-ae41-71a32a6d4692"
 version = "0.3.3"
 
+[[JpegTurbo_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "9aff0587d9603ea0de2c6f6300d9f9492bbefbd3"
+uuid = "aacddb02-875f-59d6-b918-886e6ef4fbf8"
+version = "2.0.1+3"
+
 [[JuMP]]
 deps = ["Calculus", "DataStructures", "ForwardDiff", "JSON", "LinearAlgebra", "MathOptInterface", "MutableArithmetics", "NaNMath", "Random", "SparseArrays", "Statistics"]
 git-tree-sha1 = "57c17a221a55f81890aabf00f478886859e25eaf"
@@ -612,6 +625,19 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "f128cd6cd05ffd6d3df0523ed99b90ff6f9b349a"
 uuid = "dd4b983a-f0e5-5f8d-a1b7-129d4a5fb1ac"
 version = "2.10.0+3"
+
+[[LaTeXStrings]]
+git-tree-sha1 = "c7aebfecb1a60d59c0fe023a68ec947a208b1e6b"
+uuid = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
+version = "1.2.0"
+
+[[LaserTag]]
+deps = ["AutoHashEquals", "Distributions", "IterTools", "POMDPModelTools", "POMDPSimulators", "POMDPs", "Parameters", "ParticleFilters", "Printf", "Random", "SpecialFunctions", "StaticArrays", "StatsBase", "TikzPictures"]
+git-tree-sha1 = "766608163ad75af953ea0a6b2474dc88f2922d6d"
+repo-rev = "main"
+repo-url = "git@github.com:AutomobilePOMDP/LaserTag.git"
+uuid = "40beb472-b4db-4f0b-8d48-5bd2f96ebe44"
+version = "0.1.0"
 
 [[LibGit2]]
 deps = ["Printf"]
@@ -656,6 +682,12 @@ git-tree-sha1 = "51ad0c01c94c1ce48d5cad629425035ad030bfd5"
 uuid = "4b2f31a3-9ecc-558c-b454-b3730dcb73e9"
 version = "2.34.0+3"
 
+[[Libtiff_jll]]
+deps = ["Artifacts", "JLLWrappers", "JpegTurbo_jll", "Libdl", "Pkg", "Zlib_jll", "Zstd_jll"]
+git-tree-sha1 = "291dd857901f94d683973cdf679984cdf73b56d0"
+uuid = "89763e89-9b03-5906-acba-b20f662cd828"
+version = "4.1.0+2"
+
 [[Libuuid_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "f879ae9edbaa2c74c922e8b85bb83cc84ea1450b"
@@ -677,6 +709,12 @@ version = "0.9.0"
 [[LinearAlgebra]]
 deps = ["Libdl"]
 uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+
+[[LittleCMS_jll]]
+deps = ["JpegTurbo_jll", "Libdl", "Libtiff_jll", "Pkg"]
+git-tree-sha1 = "e6ea89d915cdad8d264f7f9158c6664f879edcde"
+uuid = "d3a379c0-f9a3-5b72-a4c0-6bf4d2e8af0f"
+version = "2.9.0+0"
 
 [[LocalApproximationValueIteration]]
 deps = ["LocalFunctionApproximation", "POMDPLinter", "POMDPModelTools", "POMDPs", "Printf", "Random"]
@@ -833,6 +871,12 @@ deps = ["CompilerSupportLibraries_jll", "Libdl", "Pkg"]
 git-tree-sha1 = "0c922fd9634e358622e333fc58de61f05a048492"
 uuid = "4536629a-c528-5b80-bd46-f80d51c5b363"
 version = "0.3.9+5"
+
+[[OpenJpeg_jll]]
+deps = ["Libdl", "Libtiff_jll", "LittleCMS_jll", "Pkg", "libpng_jll"]
+git-tree-sha1 = "e330ffff1c6a593fa44cc40c29900bee82026406"
+uuid = "643b3616-a352-519d-856d-80112ee9badc"
+version = "2.3.1+0"
 
 [[OpenSSL_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -1004,6 +1048,12 @@ deps = ["DataAPI"]
 git-tree-sha1 = "b1333d4eced1826e15adbdf01a4ecaccca9d353c"
 uuid = "2dfb63ee-cc39-5dd5-95bd-886bf059d720"
 version = "0.5.3"
+
+[[Poppler_jll]]
+deps = ["Artifacts", "Cairo_jll", "Fontconfig_jll", "Glib_jll", "JLLWrappers", "JpegTurbo_jll", "Libdl", "Libtiff_jll", "OpenJpeg_jll", "Pkg", "libpng_jll"]
+git-tree-sha1 = "e11443687ac151ac6ef6699eb75f964bed8e1faa"
+uuid = "9c32591e-4766-534b-9725-b71a8799265b"
+version = "0.87.0+2"
 
 [[PrettyTables]]
 deps = ["Crayons", "Formatting", "Markdown", "Reexport", "Tables"]
@@ -1226,6 +1276,12 @@ version = "0.1.13"
 deps = ["Distributed", "InteractiveUtils", "Logging", "Random"]
 uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
+[[TikzPictures]]
+deps = ["LaTeXStrings", "Poppler_jll", "Requires"]
+git-tree-sha1 = "e3d4f9b40b5a8a2a1b198f1fc1bfeb5ac20c2de3"
+uuid = "37f6aa50-8035-52d0-81c2-5a1d08754b2d"
+version = "3.3.1"
+
 [[TimerOutputs]]
 deps = ["Printf"]
 git-tree-sha1 = "3318281dd4121ecf9713ce1383b9ace7d7476fdd"
@@ -1345,6 +1401,12 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "320228915c8debb12cb434c59057290f0834dbf6"
 uuid = "83775a58-1f1d-513f-b197-d71354ab007a"
 version = "1.2.11+18"
+
+[[Zstd_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "6f1abcb0c44f184690912aa4b0ba861dd64f11b9"
+uuid = "3161d3a3-bdf6-5164-811a-617609db77b4"
+version = "1.4.5+2"
 
 [[Zygote]]
 deps = ["AbstractFFTs", "ArrayLayouts", "ChainRules", "DiffRules", "Distributed", "FillArrays", "ForwardDiff", "IRTools", "InteractiveUtils", "LinearAlgebra", "LoopVectorization", "MacroTools", "NNlib", "NaNMath", "Random", "Requires", "SpecialFunctions", "Statistics", "ZygoteRules"]

@@ -19,9 +19,10 @@ move_towards_policy = FunctionPolicy(b->move_towards(b))
 # For AdaOPS
 @everywhere POMDPs.convert_s(::Type{V} where V <: AbstractVector{Float64}, s::LTState, pomdp::LaserTagPOMDP) = s.opponent
 grid = StateGrid([2:7;], [2:11;])
-fl_bounds = AdaOPS.IndependentBounds(FORollout(move_towards_policy), 10, check_terminal=true, consistency_fix_thresh=1e-5)
 flpu_bounds = AdaOPS.IndependentBounds(FORollout(move_towards_policy), POValue(QMDPSolver(max_iterations=1000)), check_terminal=true, consistency_fix_thresh=1e-5)
-flfu_bounds = AdaOPS.IndependentBounds(FORollout(move_towards_policy), FOValue(ValueIterationSolver(max_iterations=1000)), check_terminal=true, consistency_fix_thresh=1e-5)
+pl10pu_bounds = AdaOPS.IndependentBounds(PORollout(move_towards_policy, SIRParticleFilter(gen_lasertag(), 10)), POValue(QMDPSolver(max_iterations=1000)), check_terminal=true, consistency_fix_thresh=1e-5)
+pl30pu_bounds = AdaOPS.IndependentBounds(PORollout(move_towards_policy, SIRParticleFilter(gen_lasertag(), 30)), POValue(QMDPSolver(max_iterations=1000)), check_terminal=true, consistency_fix_thresh=1e-5)
+flfu_bounds = AdaOPS.IndependentBounds(FORollout(move_towards_policy), FOValue(ValueIterationSolver(max_iterations=1000, include_Q=false)), check_terminal=true, consistency_fix_thresh=1e-5)
 
 # pomdp = gen_lasertag()
 # b0 = initialstate(pomdp)
@@ -38,62 +39,73 @@ flfu_bounds = AdaOPS.IndependentBounds(FORollout(move_towards_policy), FOValue(V
 # inchrome(D3Tree(D))
 
 adaops_list = [:default_action=>[move_towards_policy,],
-            :bounds=>[fl_bounds, flpu_bounds, flfu_bounds],
+            :bounds=>[flpu_bounds, flfu_bounds, pl10pu_bounds, pl30pu_bounds],
             :delta=>[0.1, 0.3, 1.0],
             :grid=>[grid, nothing],
-            :k_min=>[2, 3],
-            :zeta=>[0.3, 0.4, 0.5]
+            :k_min=>[2],
+            :zeta=>[0.1, 0.3, 0.5],
+            :xi=>[0.95, 0.3, 0.1],
+            :bounds_warnings=>[false],
             ]
 adaops_list_labels = [["MoveTowards",],
-                    ["(FO_MoveTowards, 10)", "(FO_MoveTowards, QMDP)", "(FO_MoveTowards, MDP)"],
+                    ["(FO_MoveTowards, QMDP)", "(FO_MoveTowards, MDP)", "(PO_MoveTowards_10, MDP)", "(PO_MoveTowards_30, MDP)"],
                     [0.1, 0.3, 1.0],
                     ["FullGrid", "NullGrid"],
-                    [2, 3],
-                    [0.3, 0.4, 0.5]
+                    [2],
+                    [0.1, 0.3, 0.5],
+                    [0.95, 0.3, 0.1],
+                    [false],
                     ]
 # For PL-DESPOT
-fl_bounds = PL_DESPOT.IndependentBounds(PL_DESPOT.DefaultPolicyLB(move_towards_policy), 10, check_terminal=true, consistency_fix_thresh=1e-5)
-flfu_bounds = PL_DESPOT.IndependentBounds(PL_DESPOT.DefaultPolicyLB(move_towards_policy), PL_DESPOT.FullyObservableValueUB(ValueIterationSolver(max_iterations=1000)), check_terminal=true, consistency_fix_thresh=1e-5)
+flfu_bounds = PL_DESPOT.IndependentBounds(PL_DESPOT.DefaultPolicyLB(move_towards_policy), PL_DESPOT.FullyObservableValueUB(ValueIterationSolver(max_iterations=1000, include_Q=false)), check_terminal=true, consistency_fix_thresh=1e-5)
 pldespot_list = [:default_action=>[move_towards_policy,],
-                    :bounds=>[flbounds, flfu_bounds],
+                    :bounds=>[flfu_bounds],
                     :K=>[100],
                     :lambda=>[0.01],
                     :C=>[Inf, 10., 20., 30.],
-                    :beta=>[0.0, 0.1, 0.3]]
+                    :beta=>[0.0, 0.1, 0.3],
+                    :bounds_warnings=>[false],
+                    ]
 pldespot_list_labels = [["MoveTowards",],
-                    ["(MoveTowards, 10)", "(MoveTowards, MDP)"],
+                    ["(MoveTowards, MDP)"],
                     [100],
                     [0.01],
                     [Inf, 10., 20., 30.],
-                    [0.0, 0.1, 0.3]]
+                    [0.0, 0.1, 0.3],
+                    [false],
+                    ]
 
 # For ARDESPOT
-bounds = ARDESPOT.IndependentBounds(ARDESPOT.DefaultPolicyLB(move_towards_policy), 10.0, check_terminal=true)
-bounds_ub = ARDESPOT.IndependentBounds(ARDESPOT.DefaultPolicyLB(move_towards_policy), ARDESPOT.FullyObservableValueUB(ValueIterationSolver(max_iterations=1000)), check_terminal=true, consistency_fix_thresh=1e-5)
+bounds_ub = ARDESPOT.IndependentBounds(ARDESPOT.DefaultPolicyLB(move_towards_policy), ARDESPOT.FullyObservableValueUB(ValueIterationSolver(max_iterations=1000, include_Q=false)), check_terminal=true, consistency_fix_thresh=1e-5)
 
 ardespot_list = [:default_action=>[move_towards_policy,], 
-                    :bounds=>[bounds, bounds_ub],
+                    :bounds=>[bounds_ub],
                     :K=>[100, 300],
+                    :lambda=>[0.0, 0.01, 0.1],
+                    :bounds_warnings=>[false],
                 ]
 ardespot_list_labels = [["MoveTowards",], 
                         ["(MoveTowards, 10)", "(MoveTowards, MDP)"],
                         [100, 300],
+                        [0.0, 0.01, 0.1],
+                        [false],
                         ]
 
 # For POMCPOW
 value_estimator = FORollout(move_towards_policy)
-pomcpow_list = [:estimate_value=>[value_estimator, ],
+random_value_estimator = FORollout(RandomSolver())
+pomcpow_list = [:estimate_value=>[value_estimator, random_value_estimator],
                     :tree_queries=>[150000,],
                     :max_time=>[1.0,],
                     :criterion=>[MaxUCB(100),],
-                    :enable_action_pw=>[false,],
+                    :enable_action_pw=>[false, true],
                     :k_observation=>[2.,],
                     :alpha_observation=>[0.15,]]
-pomcpow_list_labels = [["MoveTowards", ],
+pomcpow_list_labels = [["MoveTowardsRollout", "RandomRollout"],
                     [150000,],
                     [1.0,],
                     [100,],
-                    [false,],
+                    [false, true],
                     [2.,],
                     [0.15,]]
 
