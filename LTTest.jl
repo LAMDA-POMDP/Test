@@ -1,6 +1,6 @@
 @everywhere using LaserTag
 
-@everywhere function move_towards(b)
+@everywhere function move_towards(pomdp, b)
     s = typeof(b) <: LTState ? b : rand(b)
     # try to sneak up diagonally
     diff = s.opponent-s.robot
@@ -14,7 +14,7 @@
         LaserTag.DIR_TO_ACTION[[sign(dx), 0]]
     end
 end
-move_towards_policy = FunctionPolicy(b->move_towards(b))
+move_towards_policy = FunctionPolicy(b->move_towards(nothing, b))
 
 # For AdaOPS
 @everywhere POMDPs.convert_s(::Type{V} where V <: AbstractVector{Float64}, s::LTState, pomdp::LaserTagPOMDP) = s.opponent
