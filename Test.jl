@@ -1,5 +1,5 @@
 # global variables
-max_workers = 11
+max_workers = 6
 
 # set up parallel environment
 using Pkg
@@ -27,19 +27,23 @@ cd("results")
     using POMCPOW
     using QMDP
     using DiscreteValueIteration
+    using LocalApproximationValueIteration
 
-    # environment (optional)
-    # using Roomba
 ]
 using Random
 using StaticArrays
 using D3Trees
 using CSV
+using GridInterpolations
+using LocalFunctionApproximation
 
 # Belief Updater
-@everywhere struct POMDPResampler
+@everywhere struct POMDPResampler{R}
     n::Int
+    r::R
 end
+
+POMDPResampler(n, r=LowVarianceResampler(n)) = POMDPResampler(n, r)
 
 @everywhere function ParticleFilters.resample(r::POMDPResampler,
                                   bp::WeightedParticleBelief,
@@ -56,7 +60,7 @@ end
         return ParticleCollection(new_ps)
     else
         # normal resample
-        return resample(LowVarianceResampler(r.n), bp, rng)
+        return resample(r.r, bp, rng)
     end
 end
 
@@ -126,5 +130,9 @@ end
     return util
 end
 
-include("RSTest.jl")
-include("LTTest.jl")
+include("LidarRoombaTest.jl")
+# include("BumperRoombaTest.jl")
+# include("VDPTagTest.jl")
+# include("SHTest.jl")
+# include("RSTest.jl")
+# include("LTTest.jl")

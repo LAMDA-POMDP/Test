@@ -17,43 +17,42 @@ end
 move_towards_policy = FunctionPolicy(b->move_towards(nothing, b))
 
 # For AdaOPS
-@everywhere POMDPs.convert_s(::Type{V} where V <: AbstractVector{Float64}, s::LTState, pomdp::LaserTagPOMDP) = s.opponent
-grid = StateGrid([2:7;], [2:11;])
-flpu_bounds = AdaOPS.IndependentBounds(FORollout(move_towards_policy), POValue(QMDPSolver(max_iterations=1000)), check_terminal=true, consistency_fix_thresh=1e-5)
-pl10pu_bounds = AdaOPS.IndependentBounds(PORollout(move_towards_policy, SIRParticleFilter(gen_lasertag(), 10)), POValue(QMDPSolver(max_iterations=1000)), check_terminal=true, consistency_fix_thresh=1e-5)
-pl30pu_bounds = AdaOPS.IndependentBounds(PORollout(move_towards_policy, SIRParticleFilter(gen_lasertag(), 30)), POValue(QMDPSolver(max_iterations=1000)), check_terminal=true, consistency_fix_thresh=1e-5)
-flfu_bounds = AdaOPS.IndependentBounds(FORollout(move_towards_policy), FOValue(ValueIterationSolver(max_iterations=1000, include_Q=false)), check_terminal=true, consistency_fix_thresh=1e-5)
+convert(s::LTState, pomdp::LaserTagPOMDP) = s.opponent
+grid = StateGrid(convert, [2:7;], [2:11;])
+pu_bounds = AdaOPS.IndependentBounds(-20.0, POValue(QMDPSolver(max_iterations=1000)), check_terminal=true, consistency_fix_thresh=1e-5)
+plm10pu_bounds = AdaOPS.IndependentBounds(PORollout(move_towards_policy, SIRParticleFilter(gen_lasertag(), 10)), POValue(QMDPSolver(max_iterations=1000)), check_terminal=true, consistency_fix_thresh=1e-5)
+plm30pu_bounds = AdaOPS.IndependentBounds(PORollout(move_towards_policy, SIRParticleFilter(gen_lasertag(), 30)), POValue(QMDPSolver(max_iterations=1000)), check_terminal=true, consistency_fix_thresh=1e-5)
+plq10pu_bounds = AdaOPS.IndependentBounds(PORollout(QMDPSolver(max_iterations=1000), SIRParticleFilter(gen_lasertag(), 10)), POValue(QMDPSolver(max_iterations=1000)), check_terminal=true, consistency_fix_thresh=1e-5)
+plq30pu_bounds = AdaOPS.IndependentBounds(PORollout(QMDPSolver(max_iterations=1000), SIRParticleFilter(gen_lasertag(), 30)), POValue(QMDPSolver(max_iterations=1000)), check_terminal=true, consistency_fix_thresh=1e-5)
 
-# pomdp = gen_lasertag()
-# b0 = initialstate(pomdp)
-# solver = AdaOPSSolver(epsilon_0=0.1,
-#                       bounds=flpu_bounds,
-#                       rng=MersenneTwister(4),
-#                       grid=grid,
-#                       k_min=2,
-#                       zeta=0.5
-#                      )
-# @time p = solve(solver, pomdp)
-# D, extra_info = build_tree_test(p, b0)
-# extra_info_analysis(extra_info)
-# inchrome(D3Tree(D))
+pomdp = gen_lasertag()
+b0 = initialstate(pomdp)
+solver = AdaOPSSolver(bounds=pu_bounds,
+                      grid=grid,
+                      m_init=30,
+                      zeta=0.4
+                     )
+@time p = solve(solver, pomdp)
+D, extra_info = build_tree_test(p, b0)
+extra_info_analysis(extra_info)
+inchrome(D3Tree(D))
 
 adaops_list = [:default_action=>[move_towards_policy,],
-            :bounds=>[flpu_bounds, flfu_bounds, pl10pu_bounds, pl30pu_bounds],
+            :bounds=>[pu_bounds, plm10pu_bounds, plm30pu_bounds, plq10pu_bounds, plq30pu_bounds],
             :delta=>[0.1, 0.3, 1.0],
-            :grid=>[grid, nothing],
-            :k_min=>[2],
-            :zeta=>[0.1, 0.3, 0.5],
-            :xi=>[0.95, 0.3, 0.1],
+            :grid=>[grid],
+            :m_init=>[30],
+            :zeta=>[0.1, 0.3],
+            :xi=>[0.95, 0.3],
             :bounds_warnings=>[false],
             ]
 adaops_list_labels = [["MoveTowards",],
-                    ["(FO_MoveTowards, QMDP)", "(FO_MoveTowards, MDP)", "(PO_MoveTowards_10, MDP)", "(PO_MoveTowards_30, MDP)"],
+                    ["(-20, QMDP)", "(PO_MoveTowards_10, QMDP)", "(PO_MoveTowards_30, QMDP)", "(PO_QMDP_10, QMDP)", "(PO_QMDP_30, QMDP)"],
                     [0.1, 0.3, 1.0],
-                    ["FullGrid", "NullGrid"],
-                    [2],
-                    [0.1, 0.3, 0.5],
-                    [0.95, 0.3, 0.1],
+                    ["FullGrid"],
+                    [30],
+                    [0.1, 0.3],
+                    [0.95, 0.3],
                     [false],
                     ]
 # For PL-DESPOT
@@ -81,13 +80,11 @@ bounds_ub = ARDESPOT.IndependentBounds(ARDESPOT.DefaultPolicyLB(move_towards_pol
 ardespot_list = [:default_action=>[move_towards_policy,], 
                     :bounds=>[bounds_ub],
                     :K=>[100, 300],
-                    :lambda=>[0.0, 0.01, 0.1],
                     :bounds_warnings=>[false],
                 ]
 ardespot_list_labels = [["MoveTowards",], 
                         ["(MoveTowards, 10)", "(MoveTowards, MDP)"],
                         [100, 300],
-                        [0.0, 0.01, 0.1],
                         [false],
                         ]
 
@@ -112,41 +109,42 @@ pomcpow_list_labels = [["MoveTowardsRollout", "RandomRollout"],
 
 # Solver list
 solver_list = [
-                PL_DESPOTSolver=>pldespot_list,
+                # PL_DESPOTSolver=>pldespot_list,
                 DESPOTSolver=>ardespot_list,
                 AdaOPSSolver=>adaops_list,
                 POMCPOWSolver=>pomcpow_list,
-                QMDPSolver=>[:max_iterations=>[1000,]],
-                FuncSolver=>[:func=>[move_towards,]],
+                # QMDPSolver=>[:max_iterations=>[1000,]],
+                # FuncSolver=>[:func=>[move_towards,]],
                 ]
 
 solver_labels = [
-                "PL-DESPOT",
+                # "PL-DESPOT",
                 "ARDESPOT",
                 "AdaOPS",
                 "POMCPOW",
-                "QMDP",
-                "MoveTowards",
+                # "QMDP",
+                # "MoveTowards",
                 ]
 solver_list_labels = [
-                    pldespot_list_labels,
+                    # pldespot_list_labels,
                     ardespot_list_labels,
                     adaops_list_labels,
                     pomcpow_list_labels,
-                    [[1000,]],
-                    [["MoveTowards",]],
+                    # [[1000,]],
+                    # [["MoveTowards",]],
                     ]
 
-number_of_episodes = 1000
+episodes_per_domain = 100
 max_steps = 100
 
 parallel_experiment(gen_lasertag,
-                    number_of_episodes,
+                    episodes_per_domain,
                     max_steps,
                     solver_list,
+                    num_of_domains=10,
                     solver_labels=solver_labels,
                     solver_list_labels=solver_list_labels,
                     belief_updater=(m)->BasicParticleFilter(m, POMDPResampler(30000), 30000),
                     max_queue_length=300,
-                    experiment_label="LT1000",
+                    experiment_label="LT10*100",
                     full_factorial_design=true) 
