@@ -34,7 +34,7 @@ grid = StateGrid(convert, range(1, stop=pomdp.size, length=5)[2:end],
                             )
 
 flpu_bounds = AdaOPS.IndependentBounds(FORollout(ping_first), POValue(qmdp_policy))
-plpu_bounds = AdaOPS.IndependentBounds(PORollout(ping_first), POValue(qmdp_policy))
+plpu_bounds = AdaOPS.IndependentBounds(SemiPORollout(ping_first), POValue(qmdp_policy))
 
 adaops_list = [:default_action=>[ping_first,],
             :bounds=>[flfu_bounds, plpu_bounds],

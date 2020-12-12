@@ -22,33 +22,9 @@ pos_noise_coeff = 0.3
 ori_noise_coeff = 0.1
 belief_updater = (m)->BasicParticleFilter(m, POMDPResampler(num_particles, BumperResampler(num_particles, m, pos_noise_coeff, ori_noise_coeff)), num_particles)
 
-# Running policy
-running = FuncSolver() do m, b
-    # s = typeof(b) == RoombaState ? b : typeof(b) <: AA228FinalProject.RoombaInitialDistribution ? rand(b) : mean(b)
-    # The statement is computational inefficient.
-    s = typeof(b) == RoombaState ? b : rand(b)
-    # compute the difference between our current heading and one that would
-    # point to the goal
-    goal_x, goal_y = get_goal_xy(m)
-    x,y,th = s[1:3]
-    ang_to_goal = atan(goal_y - y, goal_x - x)
-    del_angle = wrap_to_pi(ang_to_goal - th)
-    
-    # apply proportional control to compute the turn-rate
-    Kprop = 1.0
-    om = Kprop * del_angle
-    # find the closest option in action space
-    _,ind = findmin(abs.(om .- (-max_turn_rate:turn_rate_interval:max_turn_rate)))
-    om = (-max_turn_rate:turn_rate_interval:max_turn_rate)[ind]
-    # always travel at some fixed velocity
-    v = max_speed
-    
-    return RoombaAct(v, om)
-end
-
-grid = RectangleGrid(range(-25, stop=15, length=60),
-                    range(-20, stop=5, length=30),
-                    range(0, stop=2*pi, length=20),
+grid = RectangleGrid(range(-25, stop=15, length=201),
+                    range(-20, stop=5, length=101),
+                    range(0, stop=2*pi, length=61),
                     range(0, stop=1, length=2)) # Create the interpolating grid
 interp = LocalGIFunctionApproximator(grid)  # Create the local function approximator using the grid
 
@@ -56,6 +32,7 @@ approx_solver = LocalApproximationValueIterationSolver(interp,
                                                         verbose=true,
                                                         max_iterations=1000)
 
+running = RunningSolver()
 # For AdaOPS
 @everywhere convert(s::RoombaState, pomdp::RoombaPOMDP) = [s.x, s.y, s.theta]
 grid = StateGrid(convert,
@@ -63,33 +40,39 @@ grid = StateGrid(convert,
                 range(-20, stop=5, length=8)[2:end-1],
                 range(0, stop=2*pi, length=5)[2:end-1])
 flfu_bounds = AdaOPS.IndependentBounds(FORollout(running), FOValue(approx_solver), check_terminal=true)
-plfu_bounds = AdaOPS.IndependentBounds(PORollout(running, SIRParticleFilter(pomdp(), 30)), FOValue(approx_solver), check_terminal=true)
+splfu_bounds = AdaOPS.IndependentBounds(SemiPORollout(running), FOValue(approx_solver), check_terminal=true)
 adaops_list = [:default_action=>[running,], 
-                    :bounds=>[flfu_bounds, plfu_bounds],
+                    :bounds=>[flfu_bounds, splfu_bounds],
                     :delta=>[0.1, 0.3],
                     :grid=>[nothing, grid],
                     :m_init=>[30, 50],
                     :zeta=>[0.1, 0.3],
-                    :xi=>[0.1, 0.3, 0.95]]
+                    :xi=>[0.1, 0.3, 0.95],
+		    :bounds_warnings=>[false,],
+		    ]
 
 adaops_list_labels = [["Running",], 
-                    ["(FO_Running, MDP)", "(PO30_Running, MDP)"],
+                    ["(FO_Running, MDP)", "(SemiPO_Running, MDP)"],
                     [0.1, 0.3],
                     ["NullGrid", "FullGrid"],
                     [30, 50],
                     [0.1, 0.3],
-                    [0.1, 0.3, 0.95]]
+                    [0.1, 0.3, 0.95],
+		    [false,],
+		    ]
 # ARDESPOT
 bounds = ARDESPOT.IndependentBounds(ARDESPOT.DefaultPolicyLB(running), ARDESPOT.FullyObservableValueUB(approx_solver), check_terminal=true)
 ardespot_list = [:default_action=>[running,], 
                 :bounds=>[bounds,],
                 :lambda=>[0.1,],
                 :K=>[300],
+	    	:bounds_warnings=>[false,],
                 ]
 ardespot_list_labels = [["Running",], 
                 ["(Running, MDP)",],
                 [0.1,],
                 [300],
+		[false],
                 ]
 
 # For POMCPOW

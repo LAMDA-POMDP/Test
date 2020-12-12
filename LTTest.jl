@@ -15,30 +15,30 @@
     end
 end
 move_towards_policy = FunctionPolicy(b->move_towards(nothing, b))
+qmdp = QMDPSolver(max_iterations=1000)
+mdp = ValueIterationSolver(max_iterations=1000, include_Q=false)
 
 # For AdaOPS
 convert(s::LTState, pomdp::LaserTagPOMDP) = s.opponent
 grid = StateGrid(convert, [2:7;], [2:11;])
-pu_bounds = AdaOPS.IndependentBounds(-20.0, POValue(QMDPSolver(max_iterations=1000)), check_terminal=true, consistency_fix_thresh=1e-5)
-plm10pu_bounds = AdaOPS.IndependentBounds(PORollout(move_towards_policy, SIRParticleFilter(gen_lasertag(), 10)), POValue(QMDPSolver(max_iterations=1000)), check_terminal=true, consistency_fix_thresh=1e-5)
-plm30pu_bounds = AdaOPS.IndependentBounds(PORollout(move_towards_policy, SIRParticleFilter(gen_lasertag(), 30)), POValue(QMDPSolver(max_iterations=1000)), check_terminal=true, consistency_fix_thresh=1e-5)
-plq10pu_bounds = AdaOPS.IndependentBounds(PORollout(QMDPSolver(max_iterations=1000), SIRParticleFilter(gen_lasertag(), 10)), POValue(QMDPSolver(max_iterations=1000)), check_terminal=true, consistency_fix_thresh=1e-5)
-plq30pu_bounds = AdaOPS.IndependentBounds(PORollout(QMDPSolver(max_iterations=1000), SIRParticleFilter(gen_lasertag(), 30)), POValue(QMDPSolver(max_iterations=1000)), check_terminal=true, consistency_fix_thresh=1e-5)
+pu_bounds = AdaOPS.IndependentBounds(-20.0, POValue(qmdp), check_terminal=true, consistency_fix_thresh=1e-5)
+splmpu_bounds = AdaOPS.IndependentBounds(SemiPORollout(move_towards_policy), POValue(qmdp), check_terminal=true, consistency_fix_thresh=1e-5)
+splqpu_bounds = AdaOPS.IndependentBounds(SemiPORollout(qmdp), POValue(qmdp), check_terminal=true, consistency_fix_thresh=1e-5)
 
-pomdp = gen_lasertag()
-b0 = initialstate(pomdp)
-solver = AdaOPSSolver(bounds=pu_bounds,
-                      grid=grid,
-                      m_init=30,
-                      zeta=0.4
-                     )
-@time p = solve(solver, pomdp)
-D, extra_info = build_tree_test(p, b0)
-extra_info_analysis(extra_info)
-inchrome(D3Tree(D))
+# pomdp = gen_lasertag()
+# b0 = initialstate(pomdp)
+# solver = AdaOPSSolver(bounds=pu_bounds,
+#                       grid=grid,
+#                       m_init=30,
+#                       zeta=0.4
+#                      )
+# @time p = solve(solver, pomdp)
+# D, extra_info = build_tree_test(p, b0)
+# extra_info_analysis(extra_info)
+# inchrome(D3Tree(D))
 
 adaops_list = [:default_action=>[move_towards_policy,],
-            :bounds=>[pu_bounds, plm10pu_bounds, plm30pu_bounds, plq10pu_bounds, plq30pu_bounds],
+            :bounds=>[pu_bounds, splmpu_bounds, splqpu_bounds],
             :delta=>[0.1, 0.3, 1.0],
             :grid=>[grid],
             :m_init=>[30],
@@ -47,7 +47,7 @@ adaops_list = [:default_action=>[move_towards_policy,],
             :bounds_warnings=>[false],
             ]
 adaops_list_labels = [["MoveTowards",],
-                    ["(-20, QMDP)", "(PO_MoveTowards_10, QMDP)", "(PO_MoveTowards_30, QMDP)", "(PO_QMDP_10, QMDP)", "(PO_QMDP_30, QMDP)"],
+                    ["(-20, QMDP)", "(SemiPO_MoveTowards, QMDP)", "(SemiPO_QMDP, QMDP)"],
                     [0.1, 0.3, 1.0],
                     ["FullGrid"],
                     [30],
@@ -55,35 +55,18 @@ adaops_list_labels = [["MoveTowards",],
                     [0.95, 0.3],
                     [false],
                     ]
-# For PL-DESPOT
-flfu_bounds = PL_DESPOT.IndependentBounds(PL_DESPOT.DefaultPolicyLB(move_towards_policy), PL_DESPOT.FullyObservableValueUB(ValueIterationSolver(max_iterations=1000, include_Q=false)), check_terminal=true, consistency_fix_thresh=1e-5)
-pldespot_list = [:default_action=>[move_towards_policy,],
-                    :bounds=>[flfu_bounds],
-                    :K=>[100],
-                    :lambda=>[0.01],
-                    :C=>[Inf, 10., 20., 30.],
-                    :beta=>[0.0, 0.1, 0.3],
-                    :bounds_warnings=>[false],
-                    ]
-pldespot_list_labels = [["MoveTowards",],
-                    ["(MoveTowards, MDP)"],
-                    [100],
-                    [0.01],
-                    [Inf, 10., 20., 30.],
-                    [0.0, 0.1, 0.3],
-                    [false],
-                    ]
 
 # For ARDESPOT
-bounds_ub = ARDESPOT.IndependentBounds(ARDESPOT.DefaultPolicyLB(move_towards_policy), ARDESPOT.FullyObservableValueUB(ValueIterationSolver(max_iterations=1000, include_Q=false)), check_terminal=true, consistency_fix_thresh=1e-5)
+flfu_bounds = ARDESPOT.IndependentBounds(ARDESPOT.DefaultPolicyLB(move_towards_policy), ARDESPOT.FullyObservableValueUB(mdp), check_terminal=true, consistency_fix_thresh=1e-5)
+plfu_bounds = ARDESPOT.IndependentBounds(ARDESPOT.DefaultPolicyLB(qmdp), ARDESPOT.FullyObservableValueUB(mdp), check_terminal=true, consistency_fix_thresh=1e-5)
 
 ardespot_list = [:default_action=>[move_towards_policy,], 
-                    :bounds=>[bounds_ub],
+                    :bounds=>[flfu_bounds, plfu_bounds],
                     :K=>[100, 300],
                     :bounds_warnings=>[false],
                 ]
 ardespot_list_labels = [["MoveTowards",], 
-                        ["(MoveTowards, 10)", "(MoveTowards, MDP)"],
+                        ["(MoveTowards, MDP)", "(QMDPRollout, MDP)"],
                         [100, 300],
                         [false],
                         ]
@@ -109,7 +92,6 @@ pomcpow_list_labels = [["MoveTowardsRollout", "RandomRollout"],
 
 # Solver list
 solver_list = [
-                # PL_DESPOTSolver=>pldespot_list,
                 DESPOTSolver=>ardespot_list,
                 AdaOPSSolver=>adaops_list,
                 POMCPOWSolver=>pomcpow_list,
@@ -118,7 +100,6 @@ solver_list = [
                 ]
 
 solver_labels = [
-                # "PL-DESPOT",
                 "ARDESPOT",
                 "AdaOPS",
                 "POMCPOW",
@@ -126,7 +107,6 @@ solver_labels = [
                 # "MoveTowards",
                 ]
 solver_list_labels = [
-                    # pldespot_list_labels,
                     ardespot_list_labels,
                     adaops_list_labels,
                     pomcpow_list_labels,

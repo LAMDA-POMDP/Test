@@ -11,25 +11,46 @@ function rsgen(map)
 end
 
 # default policy
-move_east = FunctionPolicy() do b
-    return 2
+struct MoveEast<:Policy end
+@everywhere POMDPs.action(p::MoveEast, b) = 2
+move_east = MoveEast()
+struct SampleNearRock <: Policy
+    m::RockSamplePOMDP
 end
-to_best = FunctionPolicy() do b 
-    if typeof(b) <: RSState 
-        s = b 
-        good_probs = s.rocks
-    else 
-        s = rand(b) 
-        good_probs = zeros(Float64, length(s.rocks)) 
-        for (i, s) in enumerate(particles(b))
-            good_probs += s.rocks .* weight(b, i)
-        end 
-        good_probs = good_probs ./ weight_sum(b)
+struct SampleNearRockSolver <: Solver end
+@everywhere POMDPs.solve(solver::SampleNearRockSolver, pomdp::RockSamplePOMDP) = SampleNearRock(pomdp)
+@everywhere function POMDPs.action(p::SampleNearRock, s::RSState)
+    is_good = s.rocks
+    for i in 1:length(s.rocks)
+        rock_dist = norm(p.m.rocks_positions[i] - s.pos, 2)
+        # Suppose that when distance is less than 4, the sensing is effective
+        if is_good[i] == 1
+            if rock_dist == 0
+                # Sample the good rock
+                return RockSample.BASIC_ACTIONS_DICT[:sample]
+            else
+                # Move to the good rock
+                diff = p.m.rocks_positions[currently_best_rock] - s.pos 
+                if diff[1] != 0 && diff[2] != 0
+                    diff[rand([1,2])] = 0
+                end
+                diff = RSPos(sign.(diff))
+                return findfirst(x->(x==diff), RockSample.ACTION_DIRS)
+            end
+        end
+    end
+    return RockSample.BASIC_ACTIONS_DICT[:east]
+end
+@everywhere function POMDPs.action(p::SampleNearRock, b::AbstractParticleBelief)
+    s = rand(b) 
+    good_probs = zeros(Float64, length(s.rocks)) 
+    for (i, s) in enumerate(particles(b))
+        good_probs += s.rocks .* weight(b, i)
     end 
-
+    good_probs = good_probs ./ weight_sum(b)
     # Calculate the distance between the robot and rocks
     for i in 1:length(s.rocks)
-        rock_dist = norm(pomdp.rocks_positions[i] - s.pos, 2)
+        rock_dist = norm(p.m.rocks_positions[i] - s.pos, 2)
         # Suppose that when distance is less than 4, the sensing is effective
         if rock_dist < 4 && good_probs[i] > 0.3
             if good_probs > 0.9
@@ -38,7 +59,7 @@ to_best = FunctionPolicy() do b
                     return RockSample.BASIC_ACTIONS_DICT[:sample]
                 else
                     # Move to the good rock
-                    diff = pomdp.rocks_positions[currently_best_rock] - s.pos 
+                    diff = p.m.rocks_positions[currently_best_rock] - s.pos 
                     if diff[1] != 0 && diff[2] != 0
                         diff[rand([1,2])] = 0
                     end
@@ -53,6 +74,7 @@ to_best = FunctionPolicy() do b
     end
     return RockSample.BASIC_ACTIONS_DICT[:east]
 end
+sample_near_rock = SampleNearRockSolver()
 
 maps = [(7, 8), (11, 11), (15, 15)]
 # maps = [(7, 8),]
@@ -63,10 +85,8 @@ for k in 1:length(maps)
     convert(s::RSState, pomdp::RockSamplePOMDP) = SVector(sum(s.rocks))
     grid = StateGrid(convert, range(1, stop=maps[k][2], length=maps[k][2])[2:end])
 
-    # fl_bounds = AdaOPS.IndependentBounds(FORollout(move_east), maps[k][2]*10+10, check_terminal=true, consistency_fix_thresh=1e-5)
-    flfu_bounds = AdaOPS.IndependentBounds(FORollout(move_east), FOValue(ValueIterationSolver(max_iterations=1000, include_Q=false)), check_terminal=true, consistency_fix_thresh=1e-5)
-    # flpu_bounds = AdaOPS.IndependentBounds(FORollout(move_east), POValue(QMDPSolver(max_iterations=1000)), check_terminal=true, consistency_fix_thresh=1e-5)
-    # plpu_bounds = AdaOPS.IndependentBounds(POValue(SARSOPSolver(fast=true, timeout=100.0)), POValue(QMDPSolver(max_iterations=1000)), check_terminal=true, consistency_fix_thresh=1e-5)
+    fu_bounds = AdaOPS.IndependentBounds(FORollout(move_east), FOValue(ValueIterationSolver(max_iterations=1000, include_Q=false)), check_terminal=true, consistency_fix_thresh=1e-5)
+    splfu_bounds = AdaOPS.IndependentBounds(SemiPORollout(sample_near_rock), FOValue(ValueIterationSolver(max_iterations=1000, include_Q=false)), check_terminal=true, consistency_fix_thresh=1e-5)
 
     # pomdp = rsgen(maps[k])
     # b0 = initialstate(pomdp)
@@ -80,8 +100,8 @@ for k in 1:length(maps)
     # extra_info_analysis(extra_info)
     # inchrome(D3Tree(D))
 
-    adaops_list = [:default_action=>[move_east,],
-                :bounds=>[flfu_bounds,],
+    adaops_list = [:default_action=>[sample_near_rock,],
+                :bounds=>[fu_bounds, splfu_bounds],
                 :delta=>[0.1, 0.3],
                 :grid=>[nothing, grid],
                 :m_init=>[30, 50],
@@ -89,7 +109,7 @@ for k in 1:length(maps)
                 :xi=>[0.1, 0.3, 0.95]
                 ]
     adaops_list_labels = [["MoveEast",],
-                        ["(FO_MoveEast, MDP)"],
+                        ["(MoveEast, MDP)", "(SampleNearRock, MDP)"],
                         [0.1, 0.3],
                         ["NullGrid", "FullGrid"],
                         [30, 50],
@@ -98,33 +118,33 @@ for k in 1:length(maps)
                         ]
 
     # For PL-DESPOT
-    bounds = PL_DESPOT.IndependentBounds(PL_DESPOT.DefaultPolicyLB(move_east), maps[k][2]*10+10.0, check_terminal=true)
-    bounds_ub = PL_DESPOT.IndependentBounds(PL_DESPOT.DefaultPolicyLB(move_east), PL_DESPOT.FullyObservableValueUB(ValueIterationSolver(max_iterations=1000, include_Q=false)), check_terminal=true, consistency_fix_thresh=1e-5)
+    bounds = PL_DESPOT.IndependentBounds(PL_DESPOT.DefaultPolicyLB(move_east), PL_DESPOT.FullyObservableValueUB(ValueIterationSolver(max_iterations=1000, include_Q=false)), check_terminal=true, consistency_fix_thresh=1e-5)
+    plbounds = PL_DESPOT.IndependentBounds(PL_DESPOT.DefaultPolicyLB(sample_near_rock), PL_DESPOT.FullyObservableValueUB(ValueIterationSolver(max_iterations=1000, include_Q=false)), check_terminal=true, consistency_fix_thresh=1e-5)
 
-    pldespot_list = [:default_action=>[move_east,], 
-                        :bounds=>(k==3 ? [bounds] : [bounds, bounds_ub]),
+    pldespot_list = [:default_action=>[sample_near_rock,], 
+                        :bounds=>([bounds, plbounds]),
                         :K=>[100, 300],
                         :lambda=>[0.0, 0.01, 0.1],
                         :C=>[Inf, 10., 20., 30.],
                         :beta=>[0.0, 0.1, 0.3]]
-    pldespot_list_labels = [["MoveEast",], 
-                        k==3 ? ["(MoveEast, $(maps[k][2]*10+10))"] : ["(MoveEast, $(maps[k][2]*10+10))", "(MoveEast, MDP)"],
+    pldespot_list_labels = [["SampleNearRock",], 
+                        ["(MoveEast, MDP)", "(SampleNearRock, MDP)"],
                         [100, 300],
                         [0.0, 0.01, 0.1],
                         [Inf, 10., 20., 30.],
                         [0.0, 0.1, 0.3]]
 
     # For ARDESPOT
-    bounds = ARDESPOT.IndependentBounds(ARDESPOT.DefaultPolicyLB(move_east), maps[k][2]*10+10.0, check_terminal=true)
-    bounds_ub = ARDESPOT.IndependentBounds(ARDESPOT.DefaultPolicyLB(move_east), ARDESPOT.FullyObservableValueUB(ValueIterationSolver(max_iterations=1000, include_Q=false)), check_terminal=true, consistency_fix_thresh=1e-5)
+    bounds = ARDESPOT.IndependentBounds(ARDESPOT.DefaultPolicyLB(move_east), ARDESPOT.FullyObservableValueUB(ValueIterationSolver(max_iterations=1000, include_Q=false)), check_terminal=true, consistency_fix_thresh=1e-5)
+    plbounds = ARDESPOT.IndependentBounds(ARDESPOT.DefaultPolicyLB(sample_near_rock), ARDESPOT.FullyObservableValueUB(ValueIterationSolver(max_iterations=1000, include_Q=false)), check_terminal=true, consistency_fix_thresh=1e-5)
 
-    ardespot_list = [:default_action=>[move_east,], 
-                        :bounds=>[bounds_ub],
+    ardespot_list = [:default_action=>[sample_near_rock,], 
+                        :bounds=>[bounds, plbounds],
                         :K=>(k == 1 ? [100] : [100, 300]),
                         :lambda=>(k== 1 ? [0.0] : [0.0, 0.01, 0.1]),
                     ]
-    ardespot_list_labels = [["MoveEast",], 
-                            ["(MoveEast, MDP)"],
+    ardespot_list_labels = [["SampleNearRock",], 
+                            ["(MoveEast, MDP)", "(SampleNearRock, MDP)"],
                             k == 1 ? [100] : [100, 300],
                             k== 1 ? [0.0] : [0.0, 0.01, 0.1],
                             ]
@@ -132,14 +152,15 @@ for k in 1:length(maps)
     # For POMCPOW
     random_value_estimator = FORollout(RandomSolver())
     value_estimator = FORollout(move_east)
+    sample_value_estimator = FORollout(sample_near_rock)
     pomcpow_list = [:default_action=>[move_east,],
-                        :estimate_value=>[value_estimator, random_value_estimator],
+                        :estimate_value=>[value_estimator, random_value_estimator, sample_value_estimator],
                         :tree_queries=>[200000,], 
                         :max_time=>[1.0,],
                         :enable_action_pw=>[false, true],
                         :criterion=>[MaxUCB(10.),]]
     pomcpow_list_labels = [["MoveEast",],
-                        ["MoveEastRollout", "RandomRollout"],
+                        ["MoveEastRollout", "RandomRollout", "SampleNearRockRollout"],
                         [200000,], 
                         [1.0,],
                         [false, true],

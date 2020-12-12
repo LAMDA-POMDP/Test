@@ -28,45 +28,34 @@ grid = StateGrid(convert,
                 range(-4, stop=4, length=5)[2:end-1],
                 range(-4, stop=4, length=5)[2:end-1])
 flfu_bounds = AdaOPS.IndependentBounds(FORollout(to_next_ml), FOValue(approx_mdp), check_terminal=true)
-plfu_bounds = AdaOPS.IndependentBounds(PORollout(manage_uncertainty, SIRParticleFilter(pomdp(), 30)), FOValue(approx_mdp), check_terminal=true)
-adaops_list = [:default_action=>[to_next_ml, manage_uncertainty,], 
-                    :bounds=>[flfu_bounds, plfu_bounds],
+splfu_bounds = AdaOPS.IndependentBounds(SPORollout(manage_uncertainty), FOValue(approx_mdp), check_terminal=true)
+adaops_list = [:default_action=>[manage_uncertainty,], 
+                    :bounds=>[flfu_bounds, splfu_bounds],
                     :delta=>[0.1, 0.3],
                     :grid=>[nothing, grid],
                     :m_init=>[30, 50],
                     :zeta=>[0.1, 0.3],
                     :xi=>[0.1, 0.3, 0.95]]
 
-adaops_list_labels = [["Running",], 
-                    ["(FO_ToNextML, MDP)", "(PO30_ManageUncertainty, MDP)"],
+adaops_list_labels = [["ManageUncertainty",], 
+                    ["(FO_ToNextML, MDP)", "(SemiPO_ManageUncertainty, MDP)"],
                     [0.1, 0.3],
                     ["NullGrid", "FullGrid"],
                     [30, 50],
                     [0.1, 0.3],
                     [0.1, 0.3, 0.95]]
 # ARDESPOT
-fo_bounds = ARDESPOT.IndependentBounds(ARDESPOT.DefaultPolicyLB(to_next_ml), ARDESPOT.FullyObservableValueUB(approx_mdp), check_terminal=true)
-ardespot_list1 = [:default_action=>[to_next_ml], 
+fo_bounds = ARDESPOT.IndependentBounds(ARDESPOT.DefaultPolicyLB(manage_uncertainty), ARDESPOT.FullyObservableValueUB(approx_mdp), check_terminal=true)
+ardespot_list = [:default_action=>[manage_uncertainty], 
                 :bounds=>[fo_bounds,],
                 :lambda=>[0.1,],
                 :K=>[300],
                 ]
-ardespot_list_labels1 = [["ToNextML",], 
-                ["(ToNextML, MDP)",],
+ardespot_list_labels = [["ManageUncertainty",], 
+                ["(ManageUncertainty, MDP)",],
                 [0.1,],
                 [300],
                 ]
-po_bounds = ARDESPOT.IndependentBounds(ARDESPOT.DefaultPolicyLB(manage_uncertainty), ARDESPOT.FullyObservableValueUB(approx_mdp), check_terminal=true)
-ardespot_list1 = [:default_action=>[manage_uncertainty], 
-                :bounds=>[po_bounds,],
-                :lambda=>[0.1,],
-                :K=>[300],
-                ]
-ardespot_list_labels1 = [["ManageUncertainty",], 
-                        ["(ManageUncertainty, MDP)",],
-                        [0.1,],
-                        [300],
-                        ]
 
 # For POMCPOW
 running_estimator = FORollout(to_next_ml)
@@ -76,8 +65,8 @@ pomcpow_list = [:default_action=>[running,],
                 :tree_queries=>[100000,], 
                 :max_time=>[1.0,], 
                 :criterion=>[MaxUCB(1000.),]]
-pomcpow_list_labels = [["Running",], 
-                        ["RunningRollout", "MDPValue"],
+pomcpow_list_labels = [["ToNextML",], 
+                        ["ToNextMLRollout", "MDPValue"],
                         [100000,], 
                         [1.0,], 
                         ["UCB 1000"]]
@@ -85,14 +74,12 @@ pomcpow_list_labels = [["Running",],
 # Solver list
 solver_list = [
                 AdaOPSSolver=>adaops_list, 
-                DESPOTSolver=>ardespot_list1,
-                DESPOTSolver=>ardespot_list2,
+                DESPOTSolver=>ardespot_list,
                 POMCPOWSolver=>pomcpow_list,
                 ]
 solver_list_labels = [
                     adaops_list_labels, 
-                    ardespot_list_labels1,
-                    ardespot_list_labels2,
+                    ardespot_list_labels,
                     pomcpow_list_labels,
                     ]
 solver_labels = [

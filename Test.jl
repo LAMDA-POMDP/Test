@@ -1,5 +1,5 @@
 # global variables
-max_workers = 6
+max_workers = 11
 
 # set up parallel environment
 using Pkg
@@ -87,6 +87,11 @@ end
 @everywhere function ParallelExperiment.init_param(m, bound::FORollout)
     policy = typeof(bound.solver) <: Solver ? solve(bound.solver, m) : bound.solver
     FORollout(policy)
+end
+
+@everywhere function ParallelExperiment.init_param(m, bound::SemiPORollout)
+    policy = typeof(bound.solver) <: Solver ? solve(bound.solver, m) : bound.solver
+    SemiPORollout(policy)
 end
 
 @everywhere function ParallelExperiment.init_param(m, bound::POValue)
