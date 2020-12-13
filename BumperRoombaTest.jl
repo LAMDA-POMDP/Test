@@ -48,7 +48,7 @@ adaops_list = [:default_action=>[running,],
                     :m_init=>[30, 50],
                     :zeta=>[0.1, 0.3],
                     :xi=>[0.1, 0.3, 0.95],
-		    :bounds_warnings=>[false,],
+                    :bounds_warnings=>[false,],
 		    ]
 
 adaops_list_labels = [["Running",], 
@@ -58,7 +58,7 @@ adaops_list_labels = [["Running",],
                     [30, 50],
                     [0.1, 0.3],
                     [0.1, 0.3, 0.95],
-		    [false,],
+                    [false,],
 		    ]
 # ARDESPOT
 bounds = ARDESPOT.IndependentBounds(ARDESPOT.DefaultPolicyLB(running), ARDESPOT.FullyObservableValueUB(approx_solver), check_terminal=true)
@@ -66,13 +66,13 @@ ardespot_list = [:default_action=>[running,],
                 :bounds=>[bounds,],
                 :lambda=>[0.1,],
                 :K=>[300],
-	    	:bounds_warnings=>[false,],
+                :bounds_warnings=>[false,],
                 ]
 ardespot_list_labels = [["Running",], 
                 ["(Running, MDP)",],
                 [0.1,],
                 [300],
-		[false],
+                [false],
                 ]
 
 # For POMCPOW

@@ -27,7 +27,7 @@ ping_first = PingFirst(qmdp_policy)
 #     show(stdout, MIME("text/plain"), render(pomdp, step))
 # end
 
-convert(s::SubState, pomdp::SubHuntPOMDP) = SVector{3, Float64}(s.targe..., s.goal)
+@everywhere convert(s::SubState, pomdp::SubHuntPOMDP) = SVector{3, Float64}(s.targe..., s.goal)
 grid = StateGrid(convert, range(1, stop=pomdp.size, length=5)[2:end],
                             range(1, stop=pomdp.size, length=5)[2:end],
                             range(1, stop=4, length=4)[2:end]

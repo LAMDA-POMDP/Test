@@ -26,7 +26,7 @@ version = "0.3.3"
 
 [[AdaOPS]]
 deps = ["BasicPOMCP", "BeliefUpdaters", "CPUTime", "D3Trees", "Distributions", "LinearAlgebra", "MCTS", "POMDPLinter", "POMDPModelTools", "POMDPPolicies", "POMDPSimulators", "POMDPs", "Parameters", "ParticleFilters", "Printf", "Random"]
-git-tree-sha1 = "cb79a9465714b2051493cc0ab6378376ae1e4437"
+git-tree-sha1 = "e8f059669aa0d910c1733da4278b756dd3bf8d10"
 repo-rev = "main"
 repo-url = "git@github.com:AutomobilePOMDP/AdaOPS.jl.git"
 uuid = "eadfb9d8-44f1-454c-a5eb-0663ee7d74a1"
@@ -190,9 +190,9 @@ version = "0.3.0"
 
 [[Compat]]
 deps = ["Base64", "Dates", "DelimitedFiles", "Distributed", "InteractiveUtils", "LibGit2", "Libdl", "LinearAlgebra", "Markdown", "Mmap", "Pkg", "Printf", "REPL", "Random", "SHA", "Serialization", "SharedArrays", "Sockets", "SparseArrays", "Statistics", "Test", "UUIDs", "Unicode"]
-git-tree-sha1 = "2724ac91f1334c8e5c10565faad5afeafd1bfc89"
+git-tree-sha1 = "a706ff10f1cd8dab94f59fd09c0e657db8e77ff0"
 uuid = "34da2185-b29b-5c13-b0c7-acf172513d20"
-version = "3.24.0"
+version = "3.23.0"
 
 [[CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -469,9 +469,9 @@ version = "2.6.1+10"
 
 [[ICU_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
-git-tree-sha1 = "6ce9cf3c5490b045710d60ac3fd2fe48188846b3"
+git-tree-sha1 = "0ec2e6e6a049eb8520c19cd8976085afcf2943fb"
 uuid = "a51ab1cf-af8e-5615-a023-bc2c838bba6b"
-version = "67.1.0+3"
+version = "67.1.0+2"
 
 [[IncrementalPruning]]
 deps = ["Clp", "JuMP", "LinearAlgebra", "POMDPModelTools", "POMDPPolicies", "POMDPs", "ParticleFilters"]
@@ -887,9 +887,9 @@ version = "0.2.2"
 
 [[POMDPs]]
 deps = ["Distributions", "LightGraphs", "NamedTupleTools", "POMDPLinter", "Pkg", "Random", "Statistics"]
-git-tree-sha1 = "c9a7719038c82132ea676047ab2692c1af14182e"
+git-tree-sha1 = "9afe65a484302595b8df2ea4c6e83d7a28296279"
 uuid = "a93abf59-7444-517b-a68a-c42f96afdd7d"
-version = "0.9.2"
+version = "0.9.1"
 
 [[Pango_jll]]
 deps = ["Artifacts", "Cairo_jll", "Fontconfig_jll", "FreeType2_jll", "FriBidi_jll", "Glib_jll", "HarfBuzz_jll", "JLLWrappers", "Libdl", "Pkg"]
@@ -1068,11 +1068,11 @@ version = "0.1.2"
 
 [[Roomba]]
 deps = ["AEMS", "ARDESPOT", "Base64", "BasicPOMCP", "BeliefUpdaters", "Cairo", "Distributions", "FIB", "Graphics", "Gtk", "LinearAlgebra", "MCTS", "MCVI", "NearestNeighbors", "POMCPOW", "POMDPModelTools", "POMDPPolicies", "POMDPSimulators", "POMDPSolve", "POMDPs", "Parameters", "ParticleFilters", "QMDP", "Random", "Reel", "SARSOP", "StaticArrays", "Statistics"]
-git-tree-sha1 = "f69a3b914fedc96fbe8d60f13cae6bf56c66289a"
+git-tree-sha1 = "6566d3bd121d40deb183d9b24f12cd9fe1eeb09d"
 repo-rev = "master"
 repo-url = "git@github.com:AutomobilePOMDP/Roomba.git"
 uuid = "27451d18-47cd-4e6c-a8d6-4c3b695fab9f"
-version = "0.1.0"
+version = "0.1.1"
 
 [[SARSOP]]
 deps = ["POMDPLinter", "POMDPModelTools", "POMDPPolicies", "POMDPXFiles", "POMDPs", "Parameters", "SARSOP_jll"]
@@ -1175,7 +1175,7 @@ version = "1.1.0"
 
 [[SubHunt]]
 deps = ["Distributions", "LinearAlgebra", "POMDPModelTools", "POMDPs", "Parameters", "ParticleFilters", "Printf", "Random", "RecipesBase", "StaticArrays"]
-git-tree-sha1 = "8fb0b9d4e761cc50bfc0a5337217c96031bd2409"
+git-tree-sha1 = "4e5efaeb2d1eab8012ab48a5fe3459353ea297a6"
 repo-rev = "master"
 repo-url = "git@github.com:AutomobilePOMDP/SubHunt.jl.git"
 uuid = "a88f5ffd-3e7a-53ba-860a-e6b731d22c85"
@@ -1233,7 +1233,7 @@ version = "1.3.0"
 
 [[VDPTag2]]
 deps = ["BeliefUpdaters", "Distributions", "LinearAlgebra", "MCTS", "POMDPModelTools", "POMDPModels", "POMDPPolicies", "POMDPSimulators", "POMDPs", "Parameters", "ParticleFilters", "Plots", "Random", "Reel", "StaticArrays"]
-git-tree-sha1 = "9339632cc5d5dfec87dcef06d89230aa15986a8e"
+git-tree-sha1 = "85ad12cca5aed61e47648d849608cdf1c3cc3fb5"
 repo-rev = "master"
 repo-url = "git@github.com:AutomobilePOMDP/VDPTag2.jl.git"
 uuid = "1859f924-e7ac-11e9-25da-97193e6325a8"

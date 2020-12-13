@@ -19,7 +19,7 @@ qmdp = QMDPSolver(max_iterations=1000)
 mdp = ValueIterationSolver(max_iterations=1000, include_Q=false)
 
 # For AdaOPS
-convert(s::LTState, pomdp::LaserTagPOMDP) = s.opponent
+@everywhere convert(s::LTState, pomdp::LaserTagPOMDP) = s.opponent
 grid = StateGrid(convert, [2:7;], [2:11;])
 pu_bounds = AdaOPS.IndependentBounds(-20.0, POValue(qmdp), check_terminal=true, consistency_fix_thresh=1e-5)
 splmpu_bounds = AdaOPS.IndependentBounds(SemiPORollout(move_towards_policy), POValue(qmdp), check_terminal=true, consistency_fix_thresh=1e-5)
