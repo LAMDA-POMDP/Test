@@ -135,8 +135,8 @@ end
     return util
 end
 
-include("LidarRoombaTest.jl")
-# include("BumperRoombaTest.jl")
+# include("LidarRoombaTest.jl")
+include("BumperRoombaTest.jl")
 # include("VDPTagTest.jl")
 # include("SHTest.jl")
 # include("RSTest.jl")

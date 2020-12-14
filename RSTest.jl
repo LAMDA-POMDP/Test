@@ -14,7 +14,7 @@ end
 struct MoveEast<:Policy end
 @everywhere POMDPs.action(p::MoveEast, b) = 2
 move_east = MoveEast()
-struct SampleNearRock <: Policy
+@everywhere struct SampleNearRock <: Policy
     m::RockSamplePOMDP
 end
 struct SampleNearRockSolver <: Solver end
@@ -82,23 +82,11 @@ for k in 1:length(maps)
     println(k)
 
     # For AdaOPS
-    convert(s::RSState, pomdp::RockSamplePOMDP) = SVector(sum(s.rocks))
+    @everywhere convert(s::RSState, pomdp::RockSamplePOMDP) = SVector(sum(s.rocks))
     grid = StateGrid(convert, range(1, stop=maps[k][2], length=maps[k][2])[2:end])
 
     fu_bounds = AdaOPS.IndependentBounds(FORollout(move_east), FOValue(ValueIterationSolver(max_iterations=1000, include_Q=false)), check_terminal=true, consistency_fix_thresh=1e-5)
     splfu_bounds = AdaOPS.IndependentBounds(SemiPORollout(sample_near_rock), FOValue(ValueIterationSolver(max_iterations=1000, include_Q=false)), check_terminal=true, consistency_fix_thresh=1e-5)
-
-    # pomdp = rsgen(maps[k])
-    # b0 = initialstate(pomdp)
-    # solver = AdaOPSSolver(epsilon_0=0.1,
-    #                       bounds=plpu_bounds,
-    #                       k_min=maps[k][2],
-    #                       zeta=0.5
-    #                      )
-    # @time p = solve(solver, pomdp)
-    # D, extra_info = build_tree_test(p, b0)
-    # extra_info_analysis(extra_info)
-    # inchrome(D3Tree(D))
 
     adaops_list = [:default_action=>[sample_near_rock,],
                 :bounds=>[fu_bounds, splfu_bounds],

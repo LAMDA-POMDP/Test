@@ -22,9 +22,13 @@ pos_noise_coeff = 0.3
 ori_noise_coeff = 0.1
 belief_updater = (m)->BasicParticleFilter(m, POMDPResampler(num_particles, LidarResampler(num_particles, m, pos_noise_coeff, ori_noise_coeff)), num_particles)
 
-grid = RectangleGrid(range(-25, stop=15, length=201),
-                    range(-20, stop=5, length=101),
-                    range(0, stop=2*pi, length=61),
+#grid = RectangleGrid(range(-25, stop=15, length=201),
+#                    range(-20, stop=5, length=101),
+#                    range(0, stop=2*pi, length=61),
+#                    range(0, stop=1, length=2)) # Create the interpolating grid
+grid = RectangleGrid(range(-25, stop=15, length=21),
+                    range(-20, stop=5, length=11),
+                    range(0, stop=2*pi, length=6),
                     range(0, stop=1, length=2)) # Create the interpolating grid
 interp = LocalGIFunctionApproximator(grid)  # Create the local function approximator using the grid
 
@@ -41,49 +45,49 @@ grid = StateGrid(convert,
                 range(0, stop=2*pi, length=5)[2:end-1])
 flfu_bounds = AdaOPS.IndependentBounds(FORollout(running), FOValue(approx_solver), check_terminal=true)
 splfu_bounds = AdaOPS.IndependentBounds(SemiPORollout(running), FOValue(approx_solver), check_terminal=true)
-adaops_list = [:default_action=>[running,], 
+adaops_list = [#:default_action=>[running,], 
                     :bounds=>[flfu_bounds, splfu_bounds],
                     :delta=>[0.1, 0.3],
                     :grid=>[nothing, grid],
                     :m_init=>[30, 50],
                     :zeta=>[0.1, 0.3],
                     :xi=>[0.1, 0.3, 0.95],
-		    :bounds_warnings=>[false,],
+                    :bounds_warnings=>[false,],
 		    ]
 
-adaops_list_labels = [["ModeRunning",], 
-                    ["(FO_Running, MDP)", "(SPO_Running, MDP)"],
+adaops_list_labels = [#["ModeRunning",], 
+                    ["(FO_Running, MDP)", "(SemiPO_Running, MDP)"],
                     [0.1, 0.3],
                     ["NullGrid", "FullGrid"],
                     [30, 50],
                     [0.1, 0.3],
                     [0.1, 0.3, 0.95],
-		    [false],
+                    [false],
 		    ]
 # ARDESPOT
 bounds = ARDESPOT.IndependentBounds(ARDESPOT.DefaultPolicyLB(running), ARDESPOT.FullyObservableValueUB(approx_solver), check_terminal=true)
-ardespot_list = [:default_action=>[running,], 
+ardespot_list = [#:default_action=>[running,], 
                 :bounds=>[bounds],
                 :lambda=>[0.1,],
                 :K=>[300],
-	    	:bounds_warnings=>[false,],
+                :bounds_warnings=>[false,],
                 ]
-ardespot_list_labels = [["Running",], 
+ardespot_list_labels = [#["Running",], 
                 ["(Running, MDP)",],
                 [0.1,],
                 [300],
-	    	[false],
+                [false],
                 ]
 
 # For POMCPOW
 running_estimator = FORollout(running)
 mdp_estimator = FOValue(approx_solver)
-pomcpow_list = [:default_action=>[running], 
+pomcpow_list = [#:default_action=>[running], 
                 :estimate_value=>[running_estimator, mdp_estimator],
                 :tree_queries=>[100000,], 
                 :max_time=>[1.0,], 
                 :criterion=>[MaxUCB(1000.),]]
-pomcpow_list_labels = [["Running",], 
+pomcpow_list_labels = [#["Running",], 
                         ["RunningRollout", "MDPValue"],
                         [100000,], 
                         [1.0,], 
