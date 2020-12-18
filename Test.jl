@@ -29,9 +29,10 @@ cd("results")
     using DiscreteValueIteration
     using LocalApproximationValueIteration
 
+    using LinearAlgebra
+    using StaticArrays
 ]
 using Random
-using StaticArrays
 using D3Trees
 using CSV
 using GridInterpolations
@@ -43,7 +44,7 @@ using LocalFunctionApproximation
     r::R
 end
 
-POMDPResampler(n, r=LowVarianceResampler(n)) = POMDPResampler(n, r)
+@everywhere POMDPResampler(n, r=LowVarianceResampler(n)) = POMDPResampler(n, r)
 
 @everywhere function ParticleFilters.resample(r::POMDPResampler,
                                   bp::WeightedParticleBelief,
@@ -136,8 +137,8 @@ end
 end
 
 # include("LidarRoombaTest.jl")
-include("BumperRoombaTest.jl")
+# include("BumperRoombaTest.jl")
 # include("VDPTagTest.jl")
 # include("SHTest.jl")
-# include("RSTest.jl")
+include("RSTest.jl")
 # include("LTTest.jl")

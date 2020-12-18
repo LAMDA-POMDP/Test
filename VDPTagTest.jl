@@ -28,7 +28,7 @@ grid = StateGrid(convert,
                 range(-4, stop=4, length=5)[2:end-1],
                 range(-4, stop=4, length=5)[2:end-1])
 flfu_bounds = AdaOPS.IndependentBounds(FORollout(to_next_ml), FOValue(approx_mdp), check_terminal=true)
-splfu_bounds = AdaOPS.IndependentBounds(SPORollout(manage_uncertainty), FOValue(approx_mdp), check_terminal=true)
+splfu_bounds = AdaOPS.IndependentBounds(SemiPORollout(manage_uncertainty), FOValue(approx_mdp), check_terminal=true)
 adaops_list = [:default_action=>[manage_uncertainty,], 
                     :bounds=>[flfu_bounds, splfu_bounds],
                     :delta=>[0.1, 0.3],

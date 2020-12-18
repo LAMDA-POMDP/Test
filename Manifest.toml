@@ -8,7 +8,9 @@ version = "0.1.4"
 
 [[ARDESPOT]]
 deps = ["BasicPOMCP", "BeliefUpdaters", "CPUTime", "D3Trees", "POMDPModelTools", "POMDPs", "Parameters", "ParticleFilters", "Printf", "Random"]
-git-tree-sha1 = "613505fd83769274be2ac059dec46cc69835194b"
+git-tree-sha1 = "4357040dec463a2d0961315bd30667cc2f14043b"
+repo-rev = "master"
+repo-url = "git@github.com:AutomobilePOMDP/ARDESPOT.jl.git"
 uuid = "d96c9ae4-3372-47d5-8a88-316ae77be8cf"
 version = "0.3.4"
 
@@ -26,9 +28,7 @@ version = "0.3.3"
 
 [[AdaOPS]]
 deps = ["BasicPOMCP", "BeliefUpdaters", "CPUTime", "D3Trees", "Distributions", "LinearAlgebra", "MCTS", "POMDPLinter", "POMDPModelTools", "POMDPPolicies", "POMDPSimulators", "POMDPs", "Parameters", "ParticleFilters", "Printf", "Random"]
-git-tree-sha1 = "4f2e36aea5a1bd6fc660a5904af6c96dd90cb4a7"
-repo-rev = "main"
-repo-url = "git@github.com:AutomobilePOMDP/AdaOPS.jl.git"
+path = "../AdaOPS.jl"
 uuid = "eadfb9d8-44f1-454c-a5eb-0663ee7d74a1"
 version = "0.2.4"
 
@@ -230,9 +230,9 @@ version = "1.4.0"
 
 [[DataFrames]]
 deps = ["CategoricalArrays", "Compat", "DataAPI", "Future", "InvertedIndices", "IteratorInterfaceExtensions", "LinearAlgebra", "Markdown", "Missings", "PooledArrays", "PrettyTables", "Printf", "REPL", "Reexport", "SortingAlgorithms", "Statistics", "TableTraits", "Tables", "Unicode"]
-git-tree-sha1 = "20159837c2e5e196793a313cd700b8199fd8f985"
+git-tree-sha1 = "b46e1deb4592a5df7416b10dfcd6b01fb194ab9a"
 uuid = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
-version = "0.22.1"
+version = "0.22.2"
 
 [[DataStructures]]
 deps = ["Compat", "InteractiveUtils", "OrderedCollections"]
@@ -981,9 +981,9 @@ uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 
 [[ProgressMeter]]
 deps = ["Distributed", "Printf"]
-git-tree-sha1 = "4cff8da83f89e06eeae5b81307a08bb33a96a602"
+git-tree-sha1 = "45640774ee2efa24e52686dbdf895e88102e68fc"
 uuid = "92933f4c-e287-5a05-a399-4b506db050ca"
-version = "1.4.0"
+version = "1.4.1"
 
 [[QMDP]]
 deps = ["DiscreteValueIteration", "POMDPLinter", "POMDPModelTools", "POMDPPolicies", "POMDPs", "Random"]
@@ -1044,9 +1044,9 @@ version = "0.2.0"
 
 [[Requires]]
 deps = ["UUIDs"]
-git-tree-sha1 = "e05c53ebc86933601d36212a93b39144a2733493"
+git-tree-sha1 = "cfbac6c1ed70c002ec6361e7fd334f02820d6419"
 uuid = "ae029012-a4dd-5104-9daa-d747884805df"
-version = "1.1.1"
+version = "1.1.2"
 
 [[Rmath]]
 deps = ["Random", "Rmath_jll"]
@@ -1233,9 +1233,7 @@ version = "1.3.0"
 
 [[VDPTag2]]
 deps = ["BeliefUpdaters", "Distributions", "LinearAlgebra", "MCTS", "POMDPModelTools", "POMDPModels", "POMDPPolicies", "POMDPSimulators", "POMDPs", "Parameters", "ParticleFilters", "Plots", "Random", "Reel", "StaticArrays"]
-git-tree-sha1 = "85ad12cca5aed61e47648d849608cdf1c3cc3fb5"
-repo-rev = "master"
-repo-url = "git@github.com:AutomobilePOMDP/VDPTag2.jl.git"
+path = "../VDPTag2.jl"
 uuid = "1859f924-e7ac-11e9-25da-97193e6325a8"
 version = "0.1.2"
 
