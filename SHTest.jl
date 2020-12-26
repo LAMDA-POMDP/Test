@@ -5,6 +5,7 @@ info_gather_pomdp = SubHuntPOMDP(passive_std=0.5, ownspeed=5, passive_detect_rad
 info_gather_qmdp= solve(QMDPSolver(max_iterations=1000), info_gather_pomdp)
 pomdp = SubHuntPOMDP()
 qmdp= solve(QMDPSolver(max_iterations=1000), pomdp)
+mdp = solve(ValueIterationSolver(max_iterations=1000), pomdp)
 
 # Use default domain
 m = pomdp
@@ -68,19 +69,31 @@ ardespot_list_labels = [["PingFirst",],
                         ]
 
 # For POMCPOW
-value_estimator = FORollout(ping_first)
+value_estimator = FOValue(mdp)
 pomcpow_list = [:default_action=>[ping_first,],
                     :estimate_value=>[value_estimator],
                     :tree_queries=>[200000,], 
                     :max_time=>[1.0,],
-                    :enable_action_pw=>[false, true],
-                    :criterion=>[MaxUCB(10.),]]
+                    :criterion=>[MaxUCB(17.0)],
+                    :final_criterion=>[MaxTries()],
+                    :max_depth=>[90],
+                    :k_observation=>[6.0],
+                    :alpha_observation=>[1/100.0],
+                    :check_repeat_obs=>[false],
+                    :enable_action_pw=>[false],
+                ]
 pomcpow_list_labels = [["PingFirst",],
-                    ["PingFirst",],
+                    ["MDP",],
                     [200000,], 
                     [1.0,],
-                    [false, true],
-                    [MaxUCB(10.),]]
+                    [17.0],
+                    ["MaxTries"],
+                    [90],
+                    [6.0],
+                    [1/100.0],
+                    [false],
+                    [false],
+                ]
 
 # Solver list
 solver_list = [

@@ -28,18 +28,18 @@ for k in 1:length(maps)
 
     adaops_list = [:default_action=>[move_east,],
                 :bounds=>[bounds,],
-                :delta=>[0.1, 0.3],
+                :delta=>[0.1],
                 :grid=>[grid],
                 :m_init=>[30],
-                :zeta=>[0.2, 0.3],
+                :zeta=>[0.3],
                 :bounds_warnings=>[false]
                 ]
     adaops_list_labels = [["MoveEast",],
                         ["(MoveEast, MDP)",],
-                        [0.1, 0.3],
+                        [0.1],
                         ["FullGrid"],
                         [30],
-                        [0.2, 0.3],
+                        [0.3],
                         [false]
                         ]
 

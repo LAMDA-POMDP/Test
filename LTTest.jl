@@ -62,32 +62,43 @@ plfu_bounds = ARDESPOT.IndependentBounds(ARDESPOT.DefaultPolicyLB(qmdp), ARDESPO
 
 ardespot_list = [:default_action=>[move_towards_policy,], 
                     :bounds=>[flfu_bounds, plfu_bounds],
-                    :K=>[100, 300],
+                    :K=>[100],
                     :bounds_warnings=>[false],
                 ]
 ardespot_list_labels = [["MoveTowards",], 
                         ["(MoveTowards, MDP)", "(QMDPRollout, MDP)"],
-                        [100, 300],
+                        [100],
                         [false],
                         ]
 
 # For POMCPOW
-value_estimator = FORollout(move_towards_policy)
-random_value_estimator = FORollout(RandomSolver())
-pomcpow_list = [:estimate_value=>[value_estimator, random_value_estimator],
+value_estimator = FOValue(mdp)
+pomcpow_list = [:estimate_value=>[value_estimator],
                     :tree_queries=>[150000,],
                     :max_time=>[1.0,],
-                    :criterion=>[MaxUCB(100),],
-                    :enable_action_pw=>[false, true],
-                    :k_observation=>[2.,],
-                    :alpha_observation=>[0.15,]]
-pomcpow_list_labels = [["MoveTowardsRollout", "RandomRollout"],
+                    :max_depth=>[90],
+                    :criterion=>[MaxUCB(26.0),],
+                    :final_criterion=[MaxTries()],
+                    :enable_action_pw=>[false],
+                    :check_repeat_obs=[false,],
+                    :k_observation=>[4.,],
+                    :alpha_observation=>[1/35,]
+                    :tree_in_info=[false],
+                    :default_action=[move_towards_policy],
+                    ]
+pomcpow_list_labels = [["MDP"],
                     [150000,],
                     [1.0,],
-                    [100,],
-                    [false, true],
-                    [2.,],
-                    [0.15,]]
+                    [90],
+                    [26.0,],
+                    ["MaxTries"],
+                    [false],
+                    [false],
+                    [4.,],
+                    [1/35,],
+                    [false],
+                    ["MoveTowards"],
+                    ]
 
 
 # Solver list
