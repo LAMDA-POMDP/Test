@@ -56,6 +56,14 @@ function ParticleFilters.resample(r::POMDPResampler,
         return resample(r.r, bp, rng)
     end
 end
+function VDPUpper(pomdp, b)
+    if all(isterminal(pomdp, s) for s in particles(b))
+        return 0.0
+    else
+        return mdp(cproblem(pomdp)).tag_reward
+    end
+end
+rng = Random.GLOBAL_RNG
 
 cpomdp = VDPTagPOMDP(mdp=VDPTagMDP(barriers=CardinalBarriers(0.2, 1.8)))
 pomdp = ADiscreteVDPTagPOMDP(cpomdp=cpomdp)
@@ -68,20 +76,19 @@ convert(s::TagState, pomdp) = s.target
 grid = StateGrid(convert,
                 range(-4, stop=4, length=5)[2:end-1],
                 range(-4, stop=4, length=5)[2:end-1])
-flfu_bounds = AdaOPS.IndependentBounds(FORollout(to_next_ml), 100.0, check_terminal=true)
-splfu_bounds = AdaOPS.IndependentBounds(SemiPORollout(manage_uncertainty), 100.0, check_terminal=true)
-despot_bounds = ARDESPOT.IndependentBounds(ARDESPOT.DefaultPolicyLB(manage_uncertainty), 100.0, check_terminal=true)
+random_estimator = FORollout(RandomSolver())
+flfu_bounds = AdaOPS.IndependentBounds(random_estimator, VDPUpper, check_terminal=true, consistency_fix_thresh=1e-5)
+despot_bounds = ARDESPOT.IndependentBounds(ARDESPOT.DefaultPolicyLB(manage_uncertainty), VDPUpper, check_terminal=true, consistency_fix_thresh=1e-5)
 despot_solver = DESPOTSolver(bounds=despot_bounds, K=100, tree_in_info=true, default_action=manage_uncertainty, bounds_warnings=false)
 b0 = initialstate(m)
 s0 = rand(b0)
 solver = AdaOPSSolver(bounds=flfu_bounds,
-                        grid=grid,
-                        delta=1.6,
+                        grid=nothing,
+                        delta=0.0,
                         zeta=0.4,
                         xi=0.95,
                         m_init=20,
-                        m_min=0.2,
-                        m_max=10,
+                        sigma=3,
                         bounds_warnings=true,
                         default_action=manage_uncertainty 
                         )
@@ -92,7 +99,7 @@ adaops = solve(solver, m)
 @time action(adaops, b0)
 # show(stdout, MIME("text/plain"), info[:tree])
 D, extra_info = build_tree_test(adaops, b0)
-show(stdout, MIME("text/plain"), D)
+# show(stdout, MIME("text/plain"), D)
 extra_info_analysis(extra_info)
 
 num_particles = 30000

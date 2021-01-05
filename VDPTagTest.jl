@@ -7,7 +7,7 @@ manage_uncertainty = ManageUncertainty(pomdp, 0.01)
 to_next_ml = ToNextML(pomdp)
 
 @everywhere struct RootToNextMLFirst
-    rng::MersenneTwister
+    rng::AbstractRNG
 end
 
 @everywhere function MCTS.next_action(gen::RootToNextMLFirst, p::VDPTagPOMDP, b, node)
@@ -26,8 +26,6 @@ end
     end
 end
 
-@everywhere MCTS.next_action(gen::RootToNextMLFirst, p::Union{GenerativeBeliefMDP,MeanRewardBeliefMDP}, b, node) = next_action(gen, p.pomdp, b, node)
-
 @everywhere function VDPUpper(pomdp, b)
     if all(isterminal(pomdp, s) for s in particles(b))
         return 0.0
@@ -35,36 +33,39 @@ end
         return mdp(cproblem(pomdp)).tag_reward
     end
 end
+rng = Random.GLOBAL_RNG
 
 # For AdaOPS
 @everywhere convert(s::TagState, pomdp) = s.target
 grid = StateGrid(convert,
                 range(-4, stop=4, length=5)[2:end-1],
                 range(-4, stop=4, length=5)[2:end-1])
-flfu_bounds = AdaOPS.IndependentBounds(FORollout(to_next_ml), VDPUpper, check_terminal=true)
-splfu_bounds = AdaOPS.IndependentBounds(SemiPORollout(manage_uncertainty), VDPUpper, check_terminal=true)
+random_estimator = FORollout(RandomSolver())
+flfu_bounds = AdaOPS.IndependentBounds(random_estimator, VDPUpper, check_terminal=true, consistency_fix_thresh=1e-5)
 adaops_list = [:default_action=>[manage_uncertainty,], 
-                    :bounds=>[flfu_bounds, splfu_bounds],
-                    :delta=>[0.1, 0.3],
+                    :bounds=>[flfu_bounds],
+                    :delta=>[0.8, 1.2, 2.0],
                     :grid=>[nothing, grid],
-                    :m_init=>[30, 50],
-                    :zeta=>[0.1, 0.3],
-                    :xi=>[0.1, 0.3, 0.95]]
+                    :m_init=>[10, 30, 50],
+                    :sigma=>[3, 10],
+                    :zeta=>[0.1, 0.3, 0.5],
+]
 
 adaops_list_labels = [["ManageUncertainty",], 
-                    ["(FO_ToNextML, MDP)", "(SemiPO_ManageUncertainty, MDP)"],
-                    [0.1, 0.3],
+                    ["(RandomRollout, VDPUpper)"],
+                    [0.8, 1.2, 2.0],
                     ["NullGrid", "FullGrid"],
-                    [30, 50],
-                    [0.1, 0.3],
-                    [0.1, 0.3, 0.95]]
+                    [10, 30, 50],
+                    [3, 10],
+                    [0.1, 0.3, 0.5],
+]
 # ARDESPOT
-fo_bounds = ARDESPOT.IndependentBounds(ARDESPOT.DefaultPolicyLB(manage_uncertainty), VDPUpper, check_terminal=true)
+fo_bounds = ARDESPOT.IndependentBounds(ARDESPOT.DefaultPolicyLB(manage_uncertainty), VDPUpper, check_terminal=true, consistency_fix_thresh=1e-5)
 ardespot_list = [:default_action=>[manage_uncertainty], 
                 :bounds=>[fo_bounds,],
                 :lambda=>[0.0, 0.01,],
                 :K=>[200, 300],
-                :random_source=>[MemorizingSource(500, 10, rng, min_reserve=8)],
+                :random_source=>[ARDESPOT.MemorizingSource(500, 10, rng, min_reserve=8)],
                 ]
 ardespot_list_labels = [["ManageUncertainty",], 
                 ["(ManageUncertainty, MDP)",],
@@ -137,7 +138,7 @@ parallel_experiment(pomdp,
                     solver_labels=solver_labels,
                     solver_list_labels=solver_list_labels,
                     max_queue_length=300,
-                    belief_updater=belief_updater,
+                    belief_updater=(m)->BasicParticleFilter(m, POMDPResampler(30000), 30000),
                     experiment_label="VDPTag*100",
                     full_factorial_design=true)
 
@@ -203,6 +204,6 @@ parallel_experiment(cpomdp,
                     solver_labels=solver_labels,
                     solver_list_labels=solver_list_labels,
                     max_queue_length=300,
-                    belief_updater=belief_updater,
+                    belief_updater=(m)->BasicParticleFilter(m, POMDPResampler(30000), 30000),
                     experiment_label="VDPTag*100",
                     full_factorial_design=true)

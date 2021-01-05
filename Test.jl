@@ -23,6 +23,7 @@ cd("results")
     using ARDESPOT
     # using SARSOP
     # using PointBasedValueIteration
+    using MCTS
     using BasicPOMCP
     using POMCPOW
     using QMDP
@@ -31,8 +32,9 @@ cd("results")
 
     using LinearAlgebra
     using StaticArrays
+
+    using Random
 ]
-using Random
 using D3Trees
 using CSV
 using GridInterpolations
@@ -138,7 +140,7 @@ end
 
 # include("LidarRoombaTest.jl")
 # include("BumperRoombaTest.jl")
-# include("VDPTagTest.jl")
+include("VDPTagTest.jl")
 # include("SHTest.jl")
-include("RSTest.jl")
+# include("RSTest.jl")
 # include("LTTest.jl")
