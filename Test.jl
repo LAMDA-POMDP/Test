@@ -1,5 +1,5 @@
 # global variables
-max_workers = 11
+max_workers = 48
 
 # set up parallel environment
 using Pkg
@@ -113,6 +113,18 @@ end
     PL_DESPOT.IndependentBounds(lower, upper, bounds.check_terminal, bounds.consistency_fix_thresh)
 end
 
+@everywhere function ParallelExperiment.init_param(m, bounds::PL_DESPOT.IndependentBounds{LB, UB}) where LB where UB <: QMDPSolver
+    lower = init_param(m, bounds.lower)
+    upper = (p, b)->value(solve(bounds.upper, m), b)
+    PL_DESPOT.IndependentBounds(lower, upper, bounds.check_terminal, bounds.consistency_fix_thresh)
+end
+
+@everywhere function ParallelExperiment.init_param(m, bounds::ARDESPOT.IndependentBounds{LB, UB}) where LB where UB <: QMDPSolver
+    lower = init_param(m, bounds.lower)
+    upper = (p, b)->value(solve(bounds.upper, m), b)
+    PL_DESPOT.IndependentBounds(lower, upper, bounds.check_terminal, bounds.consistency_fix_thresh)
+end
+
 @everywhere function ParallelExperiment.init_param(m, bound::PL_DESPOT.FullyObservableValueUB)
     policy = typeof(bound.p) <: Solver ? solve(bound.p, UnderlyingMDP(m)) : bound.p
     PL_DESPOT.FullyObservableValueUB(policy)
@@ -140,7 +152,7 @@ end
 
 # include("LidarRoombaTest.jl")
 # include("BumperRoombaTest.jl")
-include("VDPTagTest.jl")
+# include("VDPTagTest.jl")
 # include("SHTest.jl")
-# include("RSTest.jl")
+include("RSTest.jl")
 # include("LTTest.jl")

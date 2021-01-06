@@ -2,39 +2,22 @@
 
 # Low passive std may help agent identify useful information
 info_gather_pomdp = SubHuntPOMDP(passive_std=0.5, ownspeed=5, passive_detect_radius=5, p_aware_kill=0.05)
-info_gather_qmdp= solve(QMDPSolver(max_iterations=1000), info_gather_pomdp)
 pomdp = SubHuntPOMDP()
-qmdp= solve(QMDPSolver(max_iterations=1000), pomdp)
-mdp = solve(ValueIterationSolver(max_iterations=1000), pomdp)
 
-# Use default domain
+# Choose default domain
 m = pomdp
-qmdp_policy = qmdp
-ping_first = PingFirst(qmdp_policy)
+qmdp= solve(QMDPSolver(max_iterations=1000), m)
+mdp = solve(ValueIterationSolver(max_iterations=1000), m)
+ping_first = PingFirst(qmdp)
 
-
-# Visualization
-# b0 = initialstate(pomdp)
-# solver = AdaOPSSolver(epsilon_0=0.1,
-#                       bounds=plpu_bounds,
-#                       k_min=maps[k][2],
-#                       zeta=0.5
-#                      )
-# policy = solve(solver, pomdp)
-# D, extra_info = build_tree_test(p, b0)
-# extra_info_analysis(extra_info)
-# belief_updater = BasicParticleFilter(m, POMDPResampler(30000), 30000)
-# for step in stepthrough(m, policy, belief_updater, "s,a,r,sp", max_steps=200, rng=rng)
-#     show(stdout, MIME("text/plain"), render(pomdp, step))
-# end
-
-@everywhere convert(s::SubState, pomdp::SubHuntPOMDP) = SVector{3, Float64}(s.targe..., s.goal)
+@everywhere convert(s::SubState, pomdp::SubHuntPOMDP) = SVector{3, Float64}(s.target..., s.goal)
 grid = StateGrid(convert, range(1, stop=pomdp.size, length=5)[2:end],
                             range(1, stop=pomdp.size, length=5)[2:end],
                             range(1, stop=4, length=4)[2:end]
                             )
+POMDPs.action(p::PingFirst, b::SubHunt.SubHuntInitDist) = SubHunt.PING
 
-flpu_bounds = AdaOPS.IndependentBounds(FORollout(ping_first), POValue(qmdp_policy))
+flpu_bounds = AdaOPS.IndependentBounds(FORollout(mdp), POValue(qmdp_policy))
 plpu_bounds = AdaOPS.IndependentBounds(SemiPORollout(ping_first), POValue(qmdp_policy))
 
 adaops_list = [:default_action=>[ping_first,],
@@ -43,7 +26,6 @@ adaops_list = [:default_action=>[ping_first,],
             :grid=>[nothing, grid],
             :m_init=>[30, 50],
             :zeta=>[0.1, 0.3],
-            :xi=>[0.1, 0.3, 0.95]
             ]
 adaops_list_labels = [["PingFirst",],
                     ["(FO_PingFirst, QMDP)", "(PO_PingFirst, QMDP)",],
@@ -51,7 +33,6 @@ adaops_list_labels = [["PingFirst",],
                     ["NullGrid", "FullGrid"],
                     [30, 50],
                     [0.1, 0.3],
-                    [0.1, 0.3, 0.95],
                     ]
 
 # For ARDESPOT

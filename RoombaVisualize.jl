@@ -57,12 +57,13 @@ function ParticleFilters.resample(r::POMDPResampler,
     end
 end
 
-max_speed = 10.0
-speed_gears = 3
-max_turn_rate = 1.0
-turn_rate_interval = 1.0
-action_space = vec([RoombaAct(v, om*max_turn_rate/v) for v in range(1, stop=max_speed, length=speed_gears) for om in [-1, 1]])
-m = RoombaPOMDP(sensor=Bumper(), mdp=RoombaMDP(config=1, aspace=action_space, v_max=max_speed))
+max_speed = 5.0
+speed_gears = 2
+max_turn_rate = 2.0
+turn_gears = 3
+# action_space = vec([RoombaAct(v, om*max_turn_rate/v) for v in range(1, stop=max_speed, length=speed_gears) for om in [-1, 1]])
+action_space = vec([RoombaAct(v, om) for v in range(1, stop=max_speed, length=speed_gears) for om in range(-max_turn_rate, stop=max_turn_rate, length=turn_gears)])
+m = RoombaPOMDP(sensor=Bumper(), mdp=RoombaMDP(config=1, aspace=action_space, v_max=max_speed, goal_reward=20.0))
 
 # Belief updater
 num_particles = 30000 # number of particles in belief
@@ -93,30 +94,50 @@ grid = StateGrid(convert,
                 range(-25, stop=15, length=7)[2:end-1],
                 range(-20, stop=5, length=5)[2:end-1],
                 range(0, stop=2*pi, length=4)[2:end-1])
-flfu_bounds = AdaOPS.IndependentBounds(FORollout(running), FOValue(mdp), check_terminal=true)
-splfu_bounds = AdaOPS.IndependentBounds(SemiPORollout(running), FOValue(mdp), check_terminal=true)
-bounds = AdaOPS.IndependentBounds(SemiPORollout(running), 10.0, check_terminal=true)
-despot_bounds = ARDESPOT.IndependentBounds(ARDESPOT.DefaultPolicyLB(running), ARDESPOT.FullyObservableValueUB(approx_solver), check_terminal=true)
+struct ModePolicy <: Policy
+    p::Policy
+end
+POMDPs.action(p::ModePolicy, b::AbstractParticleBelief) = action(p.p, mode(b))
+
+random_policy = RandomPolicy(m)
+struct RandomRush <: Policy
+    m::RoombaMDP
+    turn_prob::Float64
+end
+RandomRush(p::RoombaModel, turn_prob=0.2) = RandomRush(Roomba.mdp(p), turn_prob)
+
+function POMDPs.action(p::RandomRush, b)
+    om = rand() <= p.turn_prob ? 2 * (rand()-0.5) * p.m.om_max : 0.0
+    v = p.m.v_max
+    if typeof(p.m.aspace) <: Roomba.RoombaActions
+        return RoombaAct(v, om)
+    else
+        _, ind = findmin([((act.omega-om)/p.m.om_max)^2 + ((act.v-v)/p.m.v_max)^2  for act in p.m.aspace])
+        return p.m.aspace[ind]
+    end
+end
+
+bounds = AdaOPS.IndependentBounds(FORollout(RandomRush(m, 1.0)), FOValue(mdp), check_terminal=true)
+despot_bounds = ARDESPOT.IndependentBounds(ARDESPOT.DefaultPolicyLB(running), ARDESPOT.FullyObservableValueUB(mdp), check_terminal=true)
 despot_solver = DESPOTSolver(bounds=despot_bounds, K=100, bounds_warnings=false, tree_in_info=true, default_action=running)
 b0 = initialstate(m)
 s0 = rand(b0)
-solver = AdaOPSSolver(bounds=splfu_bounds, #                         grid=grid,
+solver = AdaOPSSolver(bounds=bounds,
+                        grid=grid,
                         delta=0.1,
                         zeta=0.3,
                         xi=0.95,
                         m_init=30,
-                        m_min=0.2,
-                        m_max=20.0,
+                        sigma=2.0,
                         bounds_warnings=false
                         )
 despot = solve(despot_solver, m)
 adaops = solve(solver, m)
-# @time p = solve(solver, m)
-# @time action(p, b0)
-# show(stdout, MIME("text/plain"), info[:tree])
-# D, extra_info = build_tree_test(p, b0)
-# show(stdout, MIME("text/plain"), D)
-# extra_info_analysis(extra_info)
+@time p = solve(solver, m)
+@time action(p, b0)
+D, extra_info = build_tree_test(p, b0)
+show(stdout, MIME("text/plain"), D)
+extra_info_analysis(extra_info)
 
 @show r = simulate(RolloutSimulator(), m, despot, belief_updater(m), b0, s0)
 @show r = simulate(RolloutSimulator(), m, adaops, belief_updater(m), b0, s0)

@@ -10,13 +10,22 @@ function rsgen(map)
     return RockSamplePOMDP(map_size=(map[1],map[1]), rocks_positions=selected)
 end
 
+@everywhere function adjust1(l, d, k)
+    1
+end
+
+@everywhere function adjust2(l, d, k)
+    max(l, 1 - (0.2*k + 0.2*(1-d)))
+end
+
 # default policy
 @everywhere struct MoveEast<:Policy end
 @everywhere POMDPs.action(p::MoveEast, b) = 2
 move_east = MoveEast()
 
-maps = [(7, 8), (11, 11), (15, 15)]
-# maps = [(7, 8),]
+#maps = [(7, 8), (11, 11), (15, 15)]
+# maps = [(15, 15),]
+maps = [(11, 11),]
 for k in 1:length(maps)
     println(k)
 
@@ -24,38 +33,49 @@ for k in 1:length(maps)
     @everywhere convert(s::RSState, pomdp::RockSamplePOMDP) = SVector(sum(s.rocks))
     grid = StateGrid(convert, range(1, stop=maps[k][2], length=maps[k][2])[2:end])
 
-    bounds = AdaOPS.IndependentBounds(FORollout(move_east), FOValue(ValueIterationSolver(max_iterations=1000, include_Q=false)), check_terminal=true, consistency_fix_thresh=1e-5)
+    # bounds = AdaOPS.IndependentBounds(FORollout(move_east), FOValue(ValueIterationSolver(max_iterations=1000, include_Q=false)), check_terminal=true, consistency_fix_thresh=1e-5)
+    bounds = AdaOPS.IndependentBounds(FORollout(move_east), POValue(QMDPSolver(max_iterations=1000, verbose=true)), check_terminal=true, consistency_fix_thresh=1e-5)
 
-    adaops_list = [:default_action=>[move_east,],
+    adaops_list = [
+                :default_action=>[move_east,],
                 :bounds=>[bounds,],
-                :delta=>[0.1],
+                :delta=>[0.01, 0.015, 0.02],
                 :grid=>[grid],
                 :m_init=>[30],
-                :zeta=>[0.3],
-                :bounds_warnings=>[false]
+                :sigma=>[2.0],
+                :zeta=>[0.02, 0.03, 0.04, 0.05],
+                :bounds_warnings=>[false],
                 ]
-    adaops_list_labels = [["MoveEast",],
-                        ["(MoveEast, MDP)",],
-                        [0.1],
+    adaops_list_labels = [
+                        ["MoveEast",],
+                        ["(MoveEast, QMDP)",],
+                        [0.01, 0.015, 0.02],
                         ["FullGrid"],
                         [30],
-                        [0.3],
-                        [false]
+                        [2.0],
+                        [0.02, 0.03, 0.04, 0.05],
+                        [false],
                         ]
+    # For PLDESPOT
+    qmdp_bounds = PL_DESPOT.IndependentBounds(PL_DESPOT.DefaultPolicyLB(move_east), QMDPSolver(max_iterations=1000, verbose=true), check_terminal=true, consistency_fix_thresh=1e-5)
 
-    # For ARDESPOT
-    bounds = ARDESPOT.IndependentBounds(ARDESPOT.DefaultPolicyLB(move_east), ARDESPOT.FullyObservableValueUB(ValueIterationSolver(max_iterations=1000, include_Q=false)), check_terminal=true, consistency_fix_thresh=1e-5)
+    pl_despot_list = [
+        :default_action=>[move_east],
+        :bounds=>[qmdp_bounds],
+        :K=>[100],
+        :beta=>[0, 0.3],
+        :adjust_zeta=>[adjust1, adjust2],
+        :C=>[4]
+        ]
 
-    ardespot_list = [:default_action=>[move_east,], 
-                        :bounds=>[bounds,],
-                        :K=>[100],
-                        :bounds_warnings=>[false]
-                    ]
-    ardespot_list_labels = [["MoveEast",], 
-                            ["(MoveEast, MDP)",],
-                            [100],
-                            [false]
-                            ]
+    pl_despot_list_labels = [
+        ["move_east"],
+        ["(MoveEast, QMDP)"],
+        [100,],
+        [0, 0.3],
+        ["adjust_zeta1", "adjust_zeta2"],
+        [4,]
+        ]
 
     # For POMCPOW
     value_estimator = FORollout(move_east)
@@ -74,33 +94,34 @@ for k in 1:length(maps)
 
     # Solver list
     solver_list = [
-        DESPOTSolver=>ardespot_list, 
+        PL_DESPOTSolver=>pl_despot_list, 
         POMCPOWSolver=>pomcpow_list,
         AdaOPSSolver=>adaops_list,
     ]
     solver_list_labels = [
-        ardespot_list_labels,
+        pl_despot_list_labels,
         pomcpow_list_labels,
         adaops_list_labels,
     ]
 
     solver_labels = [
-        "ARDESPOT",
+        "PLDESPOT",
         "POMCPOW",
         "AdaOPS",
     ]
 
-    episodes_per_domain = 100
+    episodes_per_domain = 10
     max_steps = 100
     parallel_experiment(episodes_per_domain,
                         max_steps,
                         solver_list,
-                        num_of_domains=10,
+                        num_of_domains=100,
                         solver_labels=solver_labels,
                         solver_list_labels=solver_list_labels,
                         belief_updater=(m)->BasicParticleFilter(m, POMDPResampler(30000), 30000),
-                        max_queue_length=300,
-                        experiment_label="RS10*100$(maps[k])",
+                        max_queue_length=320,
+                        domain_queue_length=5,
+                        experiment_label="RS100*10$(maps[k])",
                         full_factorial_design=true)do 
                             rsgen(maps[k])
                         end
