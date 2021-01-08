@@ -1,5 +1,5 @@
 # global variables
-max_workers = 48
+max_workers = 8
 
 # set up parallel environment
 using Pkg

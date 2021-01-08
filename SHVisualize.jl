@@ -56,13 +56,6 @@ function ParticleFilters.resample(r::POMDPResampler,
         return resample(r.r, bp, rng)
     end
 end
-function VDPUpper(pomdp, b)
-    if all(isterminal(pomdp, s) for s in particles(b))
-        return 0.0
-    else
-        return mdp(cproblem(pomdp)).tag_reward
-    end
-end
 rng = Random.GLOBAL_RNG
 
 # Low passive std may help agent identify useful information

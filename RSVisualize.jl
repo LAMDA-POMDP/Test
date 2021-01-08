@@ -70,24 +70,25 @@ struct MoveEast<:Policy end
 POMDPs.action(p::MoveEast, b) = 2
 move_east = MoveEast()
 
+
 map = (11, 11)
 # m = rsgen(map)
 # qmdp_policy = solve(QMDPSolver(max_iterations=1000, verbose=true), m)
+POMDPs.action(p::AlphaVectorPolicy, s::RSState) = action(p, ParticleCollection([s]))
 
 b0 = initialstate(m)
 s0 = rand(b0)
 
 convert(s::RSState, pomdp::RockSamplePOMDP) = SVector(sum(s.rocks))
 grid = StateGrid(convert, range(1, stop=map[2], length=map[2])[2:end])
-bounds = AdaOPS.IndependentBounds(FORollout(move_east), FOValue(ValueIterationSolver(max_iterations=1000, include_Q=false)), check_terminal=true, consistency_fix_thresh=1e-5)
 po_bounds = AdaOPS.IndependentBounds(FORollout(move_east), POValue(qmdp_policy), check_terminal=true, consistency_fix_thresh=1e-5)
 
 solver = AdaOPSSolver(bounds=po_bounds,
                         grid=grid,
-                        delta=0.02,
-                        zeta=0.02,
-                        m_init=30,
-                        sigma=2.0,
+                        delta=0.1,
+                        zeta=0.1,
+                        m_init=100,
+                        sigma=6.0,
                         bounds_warnings=true,
                         default_action=move_east 
                         )
