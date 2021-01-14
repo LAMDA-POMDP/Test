@@ -1,5 +1,5 @@
 # global variables
-max_workers = 8
+max_workers = 64
 
 # set up parallel environment
 using Pkg
@@ -109,19 +109,12 @@ end
 
 @everywhere function ParallelExperiment.init_param(m, bounds::PL_DESPOT.IndependentBounds)
     lower = init_param(m, bounds.lower)
-    upper = init_param(m, bounds.upper)
-    PL_DESPOT.IndependentBounds(lower, upper, bounds.check_terminal, bounds.consistency_fix_thresh)
-end
-
-@everywhere function ParallelExperiment.init_param(m, bounds::PL_DESPOT.IndependentBounds{LB, UB}) where LB where UB <: QMDPSolver
-    lower = init_param(m, bounds.lower)
-    upper = (p, b)->value(solve(bounds.upper, m), b)
-    PL_DESPOT.IndependentBounds(lower, upper, bounds.check_terminal, bounds.consistency_fix_thresh)
-end
-
-@everywhere function ParallelExperiment.init_param(m, bounds::ARDESPOT.IndependentBounds{LB, UB}) where LB where UB <: QMDPSolver
-    lower = init_param(m, bounds.lower)
-    upper = (p, b)->value(solve(bounds.upper, m), b)
+    if typeof(bounds.upper) <: QMDPSolver
+        qmdp = solve(bounds.upper, m)
+        upper = (p, b)->value(qmdp, b)
+    else
+        upper = init_param(m, bounds.upper)
+    end
     PL_DESPOT.IndependentBounds(lower, upper, bounds.check_terminal, bounds.consistency_fix_thresh)
 end
 
@@ -132,7 +125,12 @@ end
 
 @everywhere function ParallelExperiment.init_param(m, bounds::ARDESPOT.IndependentBounds)
     lower = init_param(m, bounds.lower)
-    upper = init_param(m, bounds.upper)
+    if typeof(bounds.upper) <: QMDPSolver
+        qmdp = solve(bounds.upper, m)
+        upper = (p, b)->value(qmdp, b)
+    else
+        upper = init_param(m, bounds.upper)
+    end
     ARDESPOT.IndependentBounds(lower, upper, bounds.check_terminal, bounds.consistency_fix_thresh)
 end
 
@@ -150,9 +148,32 @@ end
     return util
 end
 
+@everywhere struct ModePolicy <: Policy
+    policy::Policy
+end
+@everywhere struct ModeSolver{P<:Union{Solver,Policy}} <: Solver
+    solver::P
+end
+@everywhere POMDPs.solve(solver::ModeSolver{P}, pomdp) where P <: Solver = ModePolicy(solve(solver.solver, pomdp))
+@everywhere POMDPs.solve(solver::ModeSolver{P}, pomdp) where P <: Policy = ModePolicy(solver.solver)
+@everywhere POMDPs.action(p::ModePolicy, b::AbstractParticleBelief) = action(p.policy, mode(b))
+@everywhere POMDPs.action(p::ModePolicy, b) = action(p.policy, b)
+
+@everywhere struct RandPolicy <: Policy
+    policy::Policy
+end
+@everywhere struct RandSolver{P<:Union{Solver,Policy}} <: Solver
+    solver::P
+end
+@everywhere POMDPs.solve(solver::RandSolver{P}, pomdp) where P <: Solver = RandPolicy(solve(solver.solver, pomdp))
+@everywhere POMDPs.solve(solver::RandSolver{P}, pomdp) where P <: Policy = RandPolicy(solver.solver)
+@everywhere POMDPs.action(p::RandPolicy, b::AbstractParticleBelief) = action(p.policy, rand(b))
+@everywhere POMDPs.action(p::RandPolicy, b) = action(p.policy, b)
+
 # include("LidarRoombaTest.jl")
-# include("BumperRoombaTest.jl")
+include("BumperRoombaTest.jl")
 # include("VDPTagTest.jl")
 # include("SHTest.jl")
-include("RSTest.jl")
+# include("RSTest.jl")
 # include("LTTest.jl")
+# include("BabyTest.jl")

@@ -21,25 +21,27 @@ grid = StateGrid(convert,
                 range(-4, stop=4, length=5)[2:end-1],
                 range(-4, stop=4, length=5)[2:end-1])
 random_estimator = FORollout(RandomSolver())
-flfu_bounds = AdaOPS.IndependentBounds(random_estimator, mdp(pomdp).tag_reward, check_terminal=true, consistency_fix_thresh=1e-5)
+bounds = AdaOPS.IndependentBounds(random_estimator, mdp(pomdp).tag_reward, check_terminal=true, consistency_fix_thresh=1e-5)
+spl_bounds = AdaOPS.IndependentBounds(SemiPORollout(manage_uncertainty), mdp(pomdp).tag_reward, check_terminal=true, consistency_fix_thresh=1e-5)
+fl_bounds = AdaOPS.IndependentBounds(FORollout(to_next_ml), mdp(pomdp).tag_reward, check_terminal=true, consistency_fix_thresh=1e-5)
 adaops_list = [
-                    #:default_action=>[manage_uncertainty,], 
-                    :bounds=>[flfu_bounds],
-                    :delta=>[0.0, 0.05],
-                    :grid=>[nothing, grid],
-                    :m_init=>[10, 30, 50],
-                    :sigma=>[3, 5, 10],
-                    :zeta=>[0.005, 0.01, 0.02, 0.05],
+                    :default_action=>[manage_uncertainty,], 
+                    :bounds=>[bounds, fl_bounds],
+                    :delta=>[0.5, 1.0],
+                    :grid=>[grid],
+                    :m_init=>[10, 20],
+                    :sigma=>[2.0, 3.0, 4.0],
+                    :zeta=>[0.03, 0.1, 0.3],
 ]
 
 adaops_list_labels = [
-                    #["ManageUncertainty",], 
-                    ["(RandomRollout, $(mdp(pomdp).tag_reward)"],
-                    [0.0, 0.05],
-                    ["NullGrid", "FullGrid"],
-                    [10, 30, 50],
-                    [3, 5, 10],
-                    [0.005, 0.01, 0.02, 0.05],
+                    ["ManageUncertainty",], 
+                    ["(RandomRollout, $(mdp(pomdp).tag_reward)", "(FO_ToNextML, $(mdp(pomdp).tag_reward)"],
+                    [0.5, 1.0],
+                    ["FullGrid"],
+                    [10, 20],
+                    [2.0, 3.0, 4.0],
+                    [0.03, 0.1, 0.3],
 ]
 # ARDESPOT
 fo_bounds = ARDESPOT.IndependentBounds(ARDESPOT.DefaultPolicyLB(manage_uncertainty), VDPUpper, check_terminal=true, consistency_fix_thresh=1e-5)
@@ -49,7 +51,7 @@ ardespot_list = [:default_action=>[manage_uncertainty],
                 :K=>[100, 200, 300],
                 ]
 ardespot_list_labels = [["ManageUncertainty",], 
-                ["(ManageUncertainty, MDP)",],
+                ["(ManageUncertainty, VDPUpper)",],
                 [0.0, 0.01, 0.1],
                 [100, 200, 300],
                 ]
@@ -90,71 +92,69 @@ pomcpow_list_labels = [
                         [false],
                         ]
 
-#= Solver list
+# Solver list
 solver_list = [
                 AdaOPSSolver=>adaops_list, 
                 DESPOTSolver=>ardespot_list,
-                #POMCPOWSolver=>pomcpow_list,
+                POMCPOWSolver=>pomcpow_list,
                 ]
 solver_list_labels = [
                     adaops_list_labels, 
                     ardespot_list_labels,
-                    #pomcpow_list_labels,
+                    pomcpow_list_labels,
                     ]
 solver_labels = [
                 "ADAOPS",
                 "ARDESPOT",
-                #"POMCPOW",
+                "POMCPOW",
                 ]
 
                 
-episodes_per_domain = 300
+episodes_per_domain = 1000
 max_steps = 100
 
 parallel_experiment(pomdp,
                     episodes_per_domain,
                     max_steps,
                     solver_list,
-                    num_of_domains=1,
                     solver_labels=solver_labels,
                     solver_list_labels=solver_list_labels,
-                    max_queue_length=300,
+                    max_queue_length=960,
                     belief_updater=(m)->BasicParticleFilter(m, POMDPResampler(30000), 30000),
-                    experiment_label="VDPTag*100_dis_para1",
+                    experiment_label="VDPTag1000",
                     full_factorial_design=true)
-=#
-# Solver list
-solver_list = [
-                 AdaOPSSolver=>adaops_list, 
-                 DESPOTSolver=>ardespot_list,
-                 # POMCPOWSolver=>pomcpow_list,
-                 ]
-solver_list_labels = [
-                   adaops_list_labels, 
-                   ardespot_list_labels,
-                   # pomcpow_list_labels,
-                    ]
-solver_labels = [
-                "ADAOPS",
-                "ARDESPOT",
-                # "POMCPOW",
-                ]
+# # Solver list
+# solver_list = [
+#                  AdaOPSSolver=>adaops_list, 
+#                  DESPOTSolver=>ardespot_list,
+#                  # POMCPOWSolver=>pomcpow_list,
+#                  ]
+# solver_list_labels = [
+#                    adaops_list_labels, 
+#                    ardespot_list_labels,
+#                    # pomcpow_list_labels,
+#                     ]
+# solver_labels = [
+#                 "ADAOPS",
+#                 "ARDESPOT",
+#                 # "POMCPOW",
+#                 ]
 
                 
-episodes_per_domain = 300
-max_steps = 100
+# episodes_per_domain = 300
+# max_steps = 100
 
-parallel_experiment(dpomdp,
-                    episodes_per_domain,
-                    max_steps,
-                    solver_list,
-                    num_of_domains=1,
-                    solver_labels=solver_labels,
-                    solver_list_labels=solver_list_labels,
-                    max_queue_length=900,
-                    belief_updater=(m)->BasicParticleFilter(m, POMDPResampler(30000), 30000),
-                    experiment_label="VDPTag*100_addis",
-                    full_factorial_design=true)
+# parallel_experiment(dpomdp,
+#                     episodes_per_domain,
+#                     max_steps,
+#                     solver_list,
+#                     num_of_domains=1,
+#                     solver_labels=solver_labels,
+#                     solver_list_labels=solver_list_labels,
+#                     max_queue_length=900,
+#                     belief_updater=(m)->BasicParticleFilter(m, POMDPResampler(30000), 30000),
+#                     experiment_label="VDPTag*100_addis",
+#                     full_factorial_design=true)
 
 #= Solver list
 solver_list = [

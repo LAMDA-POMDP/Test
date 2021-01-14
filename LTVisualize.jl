@@ -80,17 +80,18 @@ POMDPs.action(p::AlphaVectorPolicy, s::LTState) = action(p, ParticleCollection([
 convert(s::LTState, pomdp::LaserTagPOMDP) = s.opponent
 grid = StateGrid(convert, [2:7;], [2:11;])
 pu_bounds = AdaOPS.IndependentBounds(FORollout(RandomSolver()), POValue(qmdp), check_terminal=true, consistency_fix_thresh=1e-5)
+bounds = AdaOPS.IndependentBounds(-20, POValue(qmdp), check_terminal=true, consistency_fix_thresh=1e-5)
 splpu_bounds = AdaOPS.IndependentBounds(SemiPORollout(qmdp), POValue(qmdp), check_terminal=true, consistency_fix_thresh=1e-5)
 despot_bounds = ARDESPOT.IndependentBounds(ARDESPOT.DefaultPolicyLB(qmdp), (p,b)->value(qmdp,b), check_terminal=true, consistency_fix_thresh=1e-5)
-despot_solver = DESPOTSolver(bounds=despot_bounds, K=100, tree_in_info=true, default_action=move_towards_policy, bounds_warnings=false)
+despot_solver = DESPOTSolver(bounds=despot_bounds, K=300, tree_in_info=true, default_action=move_towards_policy, bounds_warnings=false)
 b0 = initialstate(m)
 s0 = rand(b0)
-solver = AdaOPSSolver(bounds=pu_bounds,
+solver = AdaOPSSolver(bounds=bounds,
+                        delta=0.3,
+                        m_init=10,
+                        sigma=8,
                         grid=grid,
-                        delta=0.1,
-                        zeta=0.1,
-                        m_init=30,
-                        sigma=2.0,
+                        zeta=0.005,
                         bounds_warnings=true,
                         default_action=move_towards_policy
                         )
@@ -101,13 +102,13 @@ adaops = solve(solver, m)
 @time action(adaops, b0)
 # show(stdout, MIME("text/plain"), info[:tree])
 D, extra_info = build_tree_test(adaops, b0)
-# show(stdout, MIME("text/plain"), D)
-extra_info_analysis(extra_info)
+show(stdout, MIME("text/plain"), D)
+extra_info_analysis(D, extra_info)
 
 num_particles = 30000
 belief_updater = (m)->BasicParticleFilter(m, POMDPResampler(num_particles), num_particles)
-@show r = simulate(RolloutSimulator(), m, despot, belief_updater(m), b0, s0)
-@show r = simulate(RolloutSimulator(), m, adaops, belief_updater(m), b0, s0)
+@show simulate(RolloutSimulator(), m, despot, belief_updater(m), b0, s0)
+@show simulate(RolloutSimulator(), m, adaops, belief_updater(m), b0, s0)
 let step = 1
     for (s, b, a, o) in stepthrough(m, despot, belief_updater(m), b0, s0, "s, b, a, o", max_steps=100)
         @show step

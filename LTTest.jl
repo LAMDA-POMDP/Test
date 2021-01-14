@@ -22,47 +22,25 @@ mdp = ValueIterationSolver(max_iterations=1000, include_Q=false)
 # For AdaOPS
 @everywhere convert(s::LTState, pomdp::LaserTagPOMDP) = s.opponent
 grid = StateGrid(convert, [2:7;], [2:11;])
-pu_bounds = AdaOPS.IndependentBounds(FORollout(RandomSolver()), POValue(qmdp), check_terminal=true, consistency_fix_thresh=1e-5)
+pu_bounds = AdaOPS.IndependentBounds(-20.0, POValue(qmdp), check_terminal=true, consistency_fix_thresh=1e-5)
 splpu_bounds = AdaOPS.IndependentBounds(SemiPORollout(qmdp), POValue(qmdp), check_terminal=true, consistency_fix_thresh=1e-5)
 
-adaops_list1 = [
+adaops_list = [
             #:default_action=>[move_towards_policy,],
-            :bounds=>[splpu_bounds],
-            :delta=>[0.3, 0.5, 0.7, 1.0],
-            :grid=>[grid],
-            :m_init=>[30],
-            :sigma=>[2.0, 3.0],
-            :zeta=>[0.03, 0.05, 0.07],
+            :bounds=>[pu_bounds],
+            :delta=>[0.05, 0.1, 0.2],
+            :grid=>[nothing],
+            :m_init=>[10, 20],
+            :sigma=>[3, 4, 5],
             :bounds_warnings=>[false],
             ]
-adaops_list_labels1 = [
+adaops_list_labels = [
                     #["MoveTowards",],
-                    ["(SemiPO_QMDP, QMDP)"],
-                    [0.3, 0.5, 0.7, 1.0],
-                    ["FullGrid"],
-                    [30],
-                    [2.0, 3.0],
-                    [0.03, 0.05, 0.07],
-                    [false],
-                    ]
-adaops_list2 = [
-            #:default_action=>[move_towards_policy,],
-            :bounds=>[splpu_bounds],
-            :delta=>[0.03, 0.1],
-            :grid=>[grid],
-            :m_init=>[50],
-            :sigma=>[2.0],
-            :zeta=>[0.1, 0.15, 0.2],
-            :bounds_warnings=>[false],
-            ]
-adaops_list_labels2 = [
-                    #["MoveTowards",],
-                    ["(SemiPO_QMDP, QMDP)"],
-                    [0.03, 0.1],
-                    ["FullGrid"],
-                    [50],
-                    [2.0],
-                    [0.1, 0.15, 0.2],
+                    ["20, QMDP"],
+                    [0.05, 0.1, 0.2],
+                    ["NullGrid"],
+                    [10, 20],
+                    [3, 4, 5],
                     [false],
                     ]
 
@@ -114,8 +92,7 @@ pomcpow_list_labels = [["MDP"],
 # Solver list
 solver_list = [
                 #DESPOTSolver=>ardespot_list,
-                AdaOPSSolver=>adaops_list1,
-                AdaOPSSolver=>adaops_list2,
+                AdaOPSSolver=>adaops_list,
                 #POMCPOWSolver=>pomcpow_list,
                 # QMDPSolver=>[:max_iterations=>[1000,]],
                 # FuncSolver=>[:func=>[move_towards,]],
@@ -123,8 +100,7 @@ solver_list = [
 
 solver_list_labels = [
                     #ardespot_list_labels,
-                    adaops_list_labels1,
-                    adaops_list_labels2,
+                    adaops_list_labels,
                     #pomcpow_list_labels,
                     # [[1000,]],
                     # [["MoveTowards",]],
@@ -149,6 +125,6 @@ parallel_experiment(gen_lasertag,
                     solver_labels=solver_labels,
                     solver_list_labels=solver_list_labels,
                     belief_updater=(m)->BasicParticleFilter(m, POMDPResampler(30000), 30000),
-                    max_queue_length=960,
-                    experiment_label="LT100*10",
+                    max_queue_length=320,
+                    experiment_label="LT100*10_sp",
                     full_factorial_design=true) 

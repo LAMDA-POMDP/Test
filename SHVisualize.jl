@@ -80,7 +80,7 @@ grid = StateGrid(convert, range(1, stop=pomdp.size, length=5)[2:end],
 
 random_estimator = FORollout(RandomSolver())
 # spl_bounds = AdaOPS.IndependentBounds(SemiPORollout(ping_first), POValue(qmdp), check_terminal=true, consistency_fix_thresh=1e-5)
-bounds = AdaOPS.IndependentBounds(SemiPORollout(qmdp), POValue(qmdp), check_terminal=true, consistency_fix_thresh=1e-5)
+# bounds = AdaOPS.IndependentBounds(SemiPORollout(qmdp), POValue(qmdp), check_terminal=true, consistency_fix_thresh=1e-5)
 bounds = AdaOPS.IndependentBounds(random_estimator, POValue(qmdp), check_terminal=true, consistency_fix_thresh=1e-5)
 # despot_bounds = ARDESPOT.IndependentBounds(ARDESPOT.DefaultPolicyLB(ping_first), qmdp_policy, check_terminal=true, consistency_fix_thresh=1e-5)
 despot_bounds = ARDESPOT.IndependentBounds(ARDESPOT.DefaultPolicyLB(qmdp), qmdp_policy, check_terminal=true, consistency_fix_thresh=1e-5)
@@ -89,7 +89,7 @@ b0 = initialstate(m)
 s0 = rand(b0)
 solver = AdaOPSSolver(bounds=bounds,
                         grid=grid,
-                        delta=2.0,
+                        delta=0.5,
                         zeta=0.1,
                         m_init=30,
                         sigma=3,
@@ -104,7 +104,7 @@ adaops = solve(solver, m)
 # show(stdout, MIME("text/plain"), info[:tree])
 D, extra_info = build_tree_test(adaops, b0)
 show(stdout, MIME("text/plain"), D)
-extra_info_analysis(extra_info)
+extra_info_analysis(D, extra_info)
 
 num_particles = 30000
 belief_updater = (m)->BasicParticleFilter(m, POMDPResampler(num_particles), num_particles)
