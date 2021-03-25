@@ -128,5 +128,5 @@ parallel_experiment(pomdp,
                     solver_list_labels=solver_list_labels,
                     max_queue_length=640,
                     belief_updater=belief_updater,
-                    experiment_label="Roomba3*300",
+                    experiment_label="Roomba3_300",
                     full_factorial_design=true)

@@ -53,7 +53,6 @@ adaops_list = [:default_action=>[running],
                     :m_init=>[10],
                     :sigma=>[2, 3, 5],
                     :zeta=>[0.1, 0.2],
-                    :overtime_warning_threshold=>[Inf],
                     :bounds_warnings=>[false,],
 		    ]
 
@@ -64,7 +63,6 @@ adaops_list_labels = [["Running",],
                     [10],
                     [2, 3, 5],
                     [0.1, 0.2],
-                    [Inf],
                     [false],
             ]
 
@@ -130,5 +128,5 @@ parallel_experiment(pomdp,
                     solver_list_labels=solver_list_labels,
                     max_queue_length=300,
                     belief_updater=belief_updater,
-                    experiment_label="BumperRoomba3*300",
+                    experiment_label="BumperRoomba3_300",
                     full_factorial_design=true)

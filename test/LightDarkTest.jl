@@ -14,22 +14,22 @@ bounds = AdaOPS.IndependentBounds(FORollout(random), pomdp.correct_r, check_term
 adaops_list = [
                 :default_action=>[random],
                 :bounds=>[bounds],
-                :delta=>[0.8, 1.0, 1.2],
+                :delta=>[0.3, 0.6, 0.9],
                 :grid=>[grid],
-                :m_init=>[30],
-                :sigma=>[2, 3],
-                :zeta=>[0.3],
+                :m_init=>[30, 60],
+                :sigma=>[2],
+                :zeta=>[0.03],
                 :bounds_warnings=>[false,]
 		    ]
 
 adaops_list_labels = [
                 ["Random"],
                 ["Random, $(pomdp.correct_r)"],
-                [0.8, 1.0, 1.2],
+                [0.3, 0.6, 0.9],
                 ["FullGrid"],
-                [30],
-                [2, 3],
-                [0.3],
+                [30, 60],
+                [2],
+                [0.03],
                 [false],
 		    ]
 # ARDESPOT
@@ -54,7 +54,7 @@ pomcpow_list = [
                 :estimate_value=>[FORollout(random)],
                 :tree_queries=>[100000,], 
                 :max_time=>[1.0,], 
-                :criterion=>[MaxUCB(30.0), MaxUCB(90.0), MaxUCB(180.0)],
+                :criterion=>[MaxUCB(30.0), MaxUCB(15.0), MaxUCB(45.0)],
                 :max_depth=>[20],
                 :k_observation=>[1.0],
                 :alpha_observation=>[1/15.0, 1/45]
@@ -64,7 +64,7 @@ pomcpow_list_labels = [
                         ["Random"],
                         [100000,], 
                         [1.0,], 
-                        ["UCB 30", "UCB 90", "UCB 180"],
+                        ["UCB 30", "UCB 15", "UCB 45"],
                         [20],
                         [1.0],
                         [1/15.0, 1/45]
@@ -98,7 +98,7 @@ parallel_experiment(pomdp,
                     num_of_domains=1,
                     solver_labels=solver_labels,
                     solver_list_labels=solver_list_labels,
-                    max_queue_length=300,
+                    max_queue_length=100,
                     belief_updater=(m)->BasicParticleFilter(m, POMDPResampler(30000), 30000),
                     experiment_label="LightDark",
                     full_factorial_design=true)

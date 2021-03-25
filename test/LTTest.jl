@@ -126,5 +126,5 @@ parallel_experiment(gen_lasertag,
                     solver_list_labels=solver_list_labels,
                     belief_updater=(m)->BasicParticleFilter(m, POMDPResampler(30000), 30000),
                     max_queue_length=320,
-                    experiment_label="LT100*10_sp",
+                    experiment_label="LT100_10",
                     full_factorial_design=true) 

@@ -7,7 +7,7 @@ using BeliefUpdaters
 using ParallelExperiment
 
 # Solver
-using BS_DESPOT
+using BSDESPOT
 using AdaOPS
 using ARDESPOT
 # using SARSOP
@@ -24,7 +24,6 @@ using StaticArrays
 using D3Trees
 using CSV
 using GridInterpolations
-using LocalFunctionApproximation
 using ProfileView
 using SubHunt
 
@@ -70,10 +69,10 @@ pomdp = SubHuntPOMDP()
 
 # Choose default domain
 m = info_gather_pomdp
-qmdp= solve(QMDPSolver(max_iterations=1000, verbose=true), m)
-mdp = solve(ValueIterationSolver(max_iterations=1000, verbose=true), UnderlyingMDP(m))
-ping_first = PingFirst(qmdp)
-qmdp_policy(p, b::AbstractParticleBelief) = value(qmdp, b)
+# qmdp= solve(QMDPSolver(max_iterations=1000, verbose=true), m)
+# # mdp = solve(ValueIterationSolver(max_iterations=1000, verbose=true), UnderlyingMDP(m))
+# ping_first = PingFirst(qmdp)
+# qmdp_policy(p, b::AbstractParticleBelief) = value(qmdp, b)
 POMDPs.action(p::PingFirst, b::SubHunt.SubHuntInitDist) = SubHunt.PING
 POMDPs.action(p::AlphaVectorPolicy, s::SubState) = action(p, ParticleCollection([s]))
 
@@ -95,27 +94,27 @@ b0 = initialstate(m)
 s0 = rand(b0)
 solver = AdaOPSSolver(bounds=bounds,
                         grid=grid,
-                        delta=0.5,
-                        zeta=0.1,
-                        m_init=30,
-                        sigma=3,
+                        delta=0.1,
+                        zeta=0.05,
+                        m_init=20,
+                        sigma=20,
                         bounds_warnings=false,
                         default_action=ping_first,
                         tree_in_info=true,
                         num_b=30_000
                         )
-despot = solve(despot_solver, m)
 adaops = solve(solver, m)
 # @time p = solve(solver, m)
 # @time action(despot, b0)
 # @time action(adaops, b0)
 a, info = action_info(adaops, b0)
 info_analysis(info)
+despot = solve(despot_solver, m)
 
-# num_particles = 30000
-# belief_updater = (m)->BasicParticleFilter(m, POMDPResampler(num_particles), num_particles)
-# @show r = simulate(RolloutSimulator(), m, despot, belief_updater(m), b0, s0)
-# @show r = simulate(RolloutSimulator(), m, adaops, belief_updater(m), b0, s0)
+num_particles = 30000
+belief_updater = (m)->BasicParticleFilter(m, POMDPResampler(num_particles), num_particles)
+@show r = simulate(RolloutSimulator(), m, adaops, belief_updater(m), b0, s0)
+@show r = simulate(RolloutSimulator(), m, despot, belief_updater(m), b0, s0)
 # let step = 1
 #     for (s, b, a, o) in stepthrough(m, despot, belief_updater(m), b0, s0, "s, b, a, o", max_steps=100)
 #         @show step

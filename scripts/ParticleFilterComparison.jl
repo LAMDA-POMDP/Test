@@ -1,5 +1,5 @@
 using Pkg
-Pkg.activate("..")
+Pkg.activate(".")
 
 using LaserTag
 # using Roomba
@@ -123,7 +123,7 @@ function ParticleFilters.probdict(b::WPFBelief{S}) where S
     return b._probs
 end
 
-TVDistance(b1::AbstractParticleBelief, b2::AbstractParticleBelief, V) = sum(abs(pdf(b1,s)-pdf(b2,s)) for s in V)
+TVDistance(b1::AbstractParticleBelief, b2::AbstractParticleBelief, V) = sum(abs(pdf(b1,s)-pdf(b2,s)) for s in V) / 2.0
 
 mutable struct AdaptiveParticleFilter{PM,RM,RS,RNG<:AbstractRNG} <: Updater
     predict_model::PM
@@ -337,7 +337,7 @@ resampler = (n)->LowVarianceResampler(n)
 num_of_episodes = 1
 rounds_per_episode = 500
 max_step = 10
-verbose = true
+verbose = false
 
 # policy = solve(RandomSolver(), m)
 policy = solve(QMDPSolver(), m)
@@ -349,8 +349,8 @@ sir_particle_num = Float64[]
 sir_tvd = Float64[]
 sis_particle_num = Float64[]
 sis_tvd = Float64[]
-kld_particle_num = Float64[]
-kld_tvd = Float64[]
+adare_particle_num = Float64[]
+adare_tvd = Float64[]
 ada_particle_num = Float64[]
 ada_tvd = Float64[]
 for i in 1:num_of_episodes
@@ -386,7 +386,7 @@ for i in 1:num_of_episodes
             continue
         end
         if isnan(dist)
-            dist = 2.0
+            dist = 1.0
         end
         push!(sir_particle_num, num_of_particles)
         push!(sir_tvd, dist)
@@ -413,7 +413,7 @@ for i in 1:num_of_episodes
             continue
         end
         if isnan(dist)
-            dist = 2.0
+            dist = 1.0
         end
         push!(sis_particle_num, num_of_particles)
         push!(sis_tvd, dist)
@@ -422,34 +422,63 @@ for i in 1:num_of_episodes
         end
     end
 
-    println("KLD Sampling")
+    println("Adaptive Resampling Particle Filters")
+    for j in 1:rounds_per_episode
+        if verbose
+            println("$(j)-th round")
+        end
+        num_of_particles = ceil(Int, 10^(1+2*rand(rng)))
+        adare_filter = AdaptiveParticleFilter(m, resampler(1000), num_of_particles, MESS=(x,y)->KLDSampleSize(x,y,0.99), ESS=false, grid=nothing, rng=rng)
+        b_adare = initialize_belief(adare_filter, b0)
+        step = 0
+        dist = 0.0
+        try
+            for (a, o) in hist
+                step += 1
+                b_adare = update(adare_filter, b_adare, a, o)
+            end
+            dist = TVDistance(b_truth, b_adare, V)
+        catch
+            continue
+        end
+        if isnan(dist)
+            dist = 1.0
+        end
+        push!(adare_particle_num, num_of_particles)
+        push!(adare_tvd, dist)
+        if verbose
+            println("Avg Particle Num: $(num_of_particles) Total Variation Distance: $(dist)")
+        end
+    end
+
+    println("Adaptive Particle Filters")
     for j in 1:rounds_per_episode
         if verbose
             println("$(j)-th round")
         end
         zeta = 10^(-2+1.6*rand())
-        kld_filter = AdaptiveParticleFilter(m, resampler(1000), 10, zeta=zeta, MESS=(x,y)->KLDSampleSize(x,y,0.99), ESS=false, grid=grid, rng=rng)
-        b_kld = initialize_belief(kld_filter, b0)
+        ada_filter = AdaptiveParticleFilter(m, resampler(1000), 10, zeta=zeta, MESS=(x,y)->KLDSampleSize(x,y,0.99), ESS=false, grid=grid, rng=rng)
+        b_ada = initialize_belief(ada_filter, b0)
         step = 0
         dist = 0.0
-        num_of_particles = 0.0
+        num_of_particles = 0
         try
             for (a, o) in hist
                 step += 1
-                b_kld = update(kld_filter, b_kld, a, o)
-                num_of_particles += n_particles(b_kld)
+                b_ada = update(ada_filter, b_ada, a, o)
+                num_of_particles += n_particles(b_ada)
             end
-            dist = TVDistance(b_truth, b_kld, V)
+            dist = TVDistance(b_truth, b_ada, V)
         catch
             continue
         end
         if isnan(dist)
-            dist = 2.0
+            dist = 1.0
         end
-        push!(kld_particle_num, num_of_particles/step)
-        push!(kld_tvd, dist)
+        push!(ada_particle_num, num_of_particles/step)
+        push!(ada_tvd, dist)
         if verbose
-            println("ζ:$(zeta), Avg Particle Num: $(num_of_particles/step) Total Variation Distance: $(dist)")
+            println("Avg Particle Num: $(num_of_particles/step) Total Variation Distance: $(dist)")
         end
     end
 end
@@ -457,12 +486,13 @@ end
 pyplot()
 
 theme(:wong)
-scatter(sir_particle_num, sir_tvd, label="SIR Particle Filter", markersize=4.0, markershape=:x)
-scatter!(sis_particle_num, sis_tvd, label="SIS Particle Filter", markersize=4.0, markershape=:+)
-scatter!(kld_particle_num, kld_tvd, label="Adaptive Particle Filter", markersize=4.0, markershape=:circle)
+scatter(sis_particle_num, sis_tvd, label="SIS Particle Filter", markersize=4.0, markershape=:+)
+scatter!(sir_particle_num, sir_tvd, label="SIR Particle Filter", markersize=4.0, markershape=:x)
+# scatter!(adare_particle_num, adare_tvd, label="Adaptive Resampling Particle Filter", markersize=4.0, markershape=:circle)
+scatter!(ada_particle_num, ada_tvd, label="Adaptive Particle Filter", markersize=4.0, markershape=:circle)
 
 xlims!((10, 1000))
-ylims!((0.0, 2.0))
+ylims!((0.0, 1.0))
 xlabel!("Average Particle Number")
 ylabel!("Total Variation Distance")
-# savefig("figures/particle_filter_comparison.svg")
+savefig("figures/particle_filter_comparison.svg")

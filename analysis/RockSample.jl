@@ -7,7 +7,7 @@ using BeliefUpdaters
 using ParallelExperiment
 
 # Solver
-using BS_DESPOT
+using BSDESPOT
 using AdaOPS
 using ARDESPOT
 # using SARSOP
@@ -24,7 +24,6 @@ using StaticArrays
 using D3Trees
 using CSV
 using GridInterpolations
-using LocalFunctionApproximation
 using RockSample
 using Statistics
 using Combinatorics

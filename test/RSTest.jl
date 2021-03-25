@@ -1,65 +1,52 @@
 @everywhere using RockSample
 
-function rsgen(map)
-    possible_ps = [(i, j) for i in 1:map[1], j in 1:map[1]]
-    selected = unique(rand(possible_ps, map[2]))
-    while length(selected) != map[2]
-        push!(selected, rand(possible_ps))
-        selected = unique!(selected)
-    end
-    return RockSamplePOMDP(map_size=(map[1],map[1]), rocks_positions=selected)
-end
-
-@everywhere function adjust1(l, d, k)
+@everywhere function fixed_zeta(d, k)
     1
 end
 
-@everywhere function adjust2(l, d, k)
-    max(l, 1 - (0.2*k + 0.2*(1-d)))
+@everywhere function lower_bounded_zeta(d, k)
+    max(0.8, 1 - (0.2*k + 0.2*(1-d)))
 end
 
-# default policy
-@everywhere struct MoveEast<:Policy end
-@everywhere POMDPs.action(p::MoveEast, b) = 2
-move_east = MoveEast()
-
-#maps = [(7, 8), (11, 11), (15, 15)]
+# maps = [(7, 8), (11, 11), (15, 15)]
+maps = [(11, 11), (15, 15)]
 # maps = [(15, 15),]
-maps = [(11, 11),]
+# maps = [(11, 11),]
+move_east = RSExitSolver()
+qmdp = RSQMDPSolver()
 for k in 1:length(maps)
     println(k)
 
     # For AdaOPS
     # bounds = AdaOPS.IndependentBounds(FORollout(move_east), FOValue(ValueIterationSolver(max_iterations=1000, include_Q=false)), check_terminal=true, consistency_fix_thresh=1e-5)
-    bounds = AdaOPS.IndependentBounds(FORollout(move_east), POValue(QMDPSolver(max_iterations=1000, verbose=true)), check_terminal=true, consistency_fix_thresh=1e-5)
+    bounds = AdaOPS.IndependentBounds(FOValue(move_east), POValue(qmdp), check_terminal=true, consistency_fix_thresh=1e-5)
 
     adaops_list = [
-                :default_action=>[move_east,],
+                # :default_action=>[move_east,],
                 :bounds=>[bounds,],
-                :delta=>[0.01, 0.015, 0.02],
-                :m_init=>[30],
+                :delta=>[0.05, 0.1, 0.2],
+                :m_init=>[100],
                 :sigma=>[2.0],
-                :zeta=>[0.02, 0.03, 0.04, 0.05],
-                :bounds_warnings=>[false],
+                :num_b=>[250_000],
                 ]
     adaops_list_labels = [
-                        ["MoveEast",],
+                        # ["MoveEast",],
                         ["(MoveEast, QMDP)",],
-                        [0.01, 0.015, 0.02],
-                        [30],
+                        [0.05, 0.1, 0.2],
+                        [100],
                         [2.0],
-                        [0.02, 0.03, 0.04, 0.05],
-                        [false],
+                        [250_000],
                         ]
+
     # For BSDESPOT
-    qmdp_bounds = BS_DESPOT.IndependentBounds(BS_DESPOT.DefaultPolicyLB(move_east), QMDPSolver(max_iterations=1000, verbose=true), check_terminal=true, consistency_fix_thresh=1e-5)
+    qmdp_bounds = BSDESPOT.IndependentBounds(BSDESPOT.DefaultPolicyLB(move_east), qmdp, check_terminal=true, consistency_fix_thresh=1e-5)
 
     bsdespot_list = [
         :default_action=>[move_east],
         :bounds=>[qmdp_bounds],
         :K=>[100],
         :beta=>[0, 0.3],
-        :adjust_zeta=>[adjust1, adjust2],
+        :adjust_zeta=>[fixed_zeta, lower_bounded_zeta],
         :C=>[4]
         ]
 
@@ -68,12 +55,12 @@ for k in 1:length(maps)
         ["(MoveEast, QMDP)"],
         [100,],
         [0, 0.3],
-        ["adjust_zeta1", "adjust_zeta2"],
+        ["fixed zeta", "lower bounded zeta"],
         [4,]
         ]
 
     # For POMCPOW
-    value_estimator = FORollout(move_east)
+    value_estimator = FOValue(move_east)
     pomcpow_list = [:default_action=>[move_east,],
                         :estimate_value=>[value_estimator,],
                         :tree_queries=>[200000,], 
@@ -81,7 +68,7 @@ for k in 1:length(maps)
                         :enable_action_pw=>[false,],
                         :criterion=>[MaxUCB(10.),]]
     pomcpow_list_labels = [["MoveEast",],
-                        ["MoveEastRollout",],
+                        ["MoveEast",],
                         [200000,], 
                         [1.0,],
                         [false,],
@@ -89,19 +76,19 @@ for k in 1:length(maps)
 
     # Solver list
     solver_list = [
-        BS_DESPOTSolver=>bsdespot_list, 
-        POMCPOWSolver=>pomcpow_list,
+        # BS_DESPOTSolver=>bsdespot_list, 
+        # POMCPOWSolver=>pomcpow_list,
         AdaOPSSolver=>adaops_list,
     ]
     solver_list_labels = [
-        bsdespot_list_labels,
-        pomcpow_list_labels,
+        # bsdespot_list_labels,
+        # pomcpow_list_labels,
         adaops_list_labels,
     ]
 
     solver_labels = [
-        "BSDESPOT",
-        "POMCPOW",
+        # "BSDESPOT",
+        # "POMCPOW",
         "AdaOPS",
     ]
 
@@ -114,10 +101,10 @@ for k in 1:length(maps)
                         solver_labels=solver_labels,
                         solver_list_labels=solver_list_labels,
                         belief_updater=(m)->BasicParticleFilter(m, POMDPResampler(30000), 30000),
-                        max_queue_length=320,
+                        max_queue_length=4,
                         domain_queue_length=5,
-                        experiment_label="RS100*10$(maps[k])",
+                        experiment_label="RS100_10$(maps[k])",
                         full_factorial_design=true)do 
-                            rsgen(maps[k])
+                            RockSamplePOMDP(maps[k]...)
                         end
 end

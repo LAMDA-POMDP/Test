@@ -7,7 +7,7 @@ using BeliefUpdaters
 using ParallelExperiment
 
 # Solver
-using BS_DESPOT
+using BSDESPOT
 using AdaOPS
 using ARDESPOT
 # using SARSOP
@@ -27,6 +27,7 @@ using GridInterpolations
 using LocalFunctionApproximation
 using ProfileView
 using Roomba
+using Printf
 
 # Belief Updater
 struct POMDPResampler{R}
@@ -75,7 +76,7 @@ speed_interval = 2.0
 max_turn_rate = 1.0
 turn_rate_interval = 1.0
 action_space = vec([RoombaAct(v, om) for v in 0:speed_interval:max_speed, om in -max_turn_rate:turn_rate_interval:max_turn_rate])
-m = RoombaPOMDP(sensor=Lidar(), mdp=RoombaMDP(config=3, aspace=action_space, v_max=max_speed))
+m = RoombaPOMDP(sensor=Lidar(), mdp=RoombaMDP(config=3, aspace=action_space, v_max=max_speed, sspace=DiscreteRoombaStateSpace(50, 50, 20)))
 
 # Belief updater
 num_particles = 50000 # number of particles in belief
@@ -87,17 +88,17 @@ belief_updater = (m)->BasicParticleFilter(m, POMDPResampler(num_particles, Bumpe
 #                    range(-20, stop=5, length=101),
 #                    range(0, stop=2*pi, length=61),
 #                    range(0, stop=1, length=2)) # Create the interpolating grid
-grid = RectangleGrid(range(-25, stop=15, length=21),
-                    range(-20, stop=5, length=11),
-                    range(0, stop=2*pi, length=6),
-                    range(0, stop=1, length=2)) # Create the interpolating grid
-interp = LocalGIFunctionApproximator(grid)  # Create the local function approximator using the grid
+# grid = RectangleGrid(range(-25, stop=15, length=21),
+#                     range(-20, stop=5, length=11),
+#                     range(0, stop=2*pi, length=6),
+#                     range(0, stop=1, length=2)) # Create the interpolating grid
+# interp = LocalGIFunctionApproximator(grid)  # Create the local function approximator using the grid
 
-approx_solver = LocalApproximationValueIterationSolver(interp,
-                                                        verbose=true,
-                                                        max_iterations=1000)
+# approx_solver = LocalApproximationValueIterationSolver(interp,
+#                                                         verbose=true,
+#                                                         max_iterations=1000)
 
-mdp = solve(approx_solver, m)
+# mdp = solve(approx_solver, m)
 
 # For AdaOPS
 Base.convert(::SVector{4,Float64}, s::RoombaState) = SVector{4,Float64}(s)
@@ -106,38 +107,13 @@ grid = StateGrid(range(-25, stop=15, length=7)[2:end-1],
                 range(0, stop=2*pi, length=4)[2:end-1],
                 [1.])
 
-struct ModePolicy <: Policy
-    p::Policy
-end
-POMDPs.action(p::ModePolicy, b::AbstractParticleBelief) = action(p.p, mode(b))
-
-struct RandomRush <: Policy
-    m::RoombaMDP
-    turn_prob::Float64
-end
-RandomRush(p::RoombaModel, turn_prob=0.2) = RandomRush(Roomba.mdp(p), turn_prob)
-
-struct RandomRushSolver <: Solver 
-    turn_prob::Float64
-end
-POMDPs.solve(solver::RandomRushSolver, m) = RandomRush(m, solver.turn_prob)
-
-function POMDPs.action(p::RandomRush, b)
-    if rand() < p.turn_prob
-        rand_act = rand(p.m.aspace)
-        return RoombaAct(p.m.v_max, rand_act.omega)
-    else
-        return RoombaAct(p.m.v_max, 0.0)
-    end
-end
-
 running = solve(RunningSolver(), m)
 random_policy = RandomPolicy(m)
 
 # bounds = AdaOPS.IndependentBounds(FORollout(RandomRush(m, 0.5)), FOValue(mdp), check_terminal=true)
 # bounds = AdaOPS.IndependentBounds(SemiPORollout(ModePolicy(mdp)), FOValue(mdp), check_terminal=true)
-# bounds = AdaOPS.IndependentBounds(SemiPORollout(running), FOValue(mdp), check_terminal=true)
-bounds = AdaOPS.IndependentBounds(FORollout(running), FOValue(mdp), check_terminal=true)
+bounds = AdaOPS.IndependentBounds(SemiPORollout(running), FOValue(mdp), check_terminal=true)
+# bounds = AdaOPS.IndependentBounds(FORollout(running), FOValue(mdp), check_terminal=true)
 b0 = initialstate(m)
 s0 = rand(b0)
 solver = AdaOPSSolver(bounds=bounds,

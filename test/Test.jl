@@ -1,12 +1,12 @@
 # global variables
-max_workers = 4
+max_workers = 2
 
 # set up parallel environment
 using Pkg
-Pkg.activate("..")
+Pkg.activate(".")
 using Distributed
 addprocs(max_workers, exeflags="--project") # create n workers
-cd("../results")
+cd("./results")
 
 @everywhere[
     using POMDPs
@@ -18,7 +18,7 @@ cd("../results")
     using ParallelExperiment
 
     # Solver
-    using BS_DESPOT
+    using BSDESPOT
     using AdaOPS
     using ARDESPOT
     # using SARSOP
@@ -107,29 +107,29 @@ end
     FOValue(policy)
 end
 
-@everywhere function ParallelExperiment.init_param(m, bounds::BS_DESPOT.IndependentBounds)
+@everywhere function ParallelExperiment.init_param(m, bounds::BSDESPOT.IndependentBounds)
     lower = init_param(m, bounds.lower)
-    if typeof(bounds.upper) <: QMDPSolver
-        qmdp = solve(bounds.upper, m)
-        upper = (p, b)->value(qmdp, b)
+    upper_policy = init_param(m, bounds.upper)
+    if typeof(upper_policy) <: AlphaVectorPolicy
+        upper = (p, b)->value(upper_policy, b)
     else
-        upper = init_param(m, bounds.upper)
+        upper = upper_policy
     end
-    BS_DESPOT.IndependentBounds(lower, upper, bounds.check_terminal, bounds.consistency_fix_thresh)
+    BSDESPOT.IndependentBounds(lower, upper, bounds.check_terminal, bounds.consistency_fix_thresh)
 end
 
-@everywhere function ParallelExperiment.init_param(m, bound::BS_DESPOT.FullyObservableValueUB)
+@everywhere function ParallelExperiment.init_param(m, bound::BSDESPOT.FullyObservableValueUB)
     policy = typeof(bound.p) <: Solver ? solve(bound.p, UnderlyingMDP(m)) : bound.p
-    BS_DESPOT.FullyObservableValueUB(policy)
+    BSDESPOT.FullyObservableValueUB(policy)
 end
 
 @everywhere function ParallelExperiment.init_param(m, bounds::ARDESPOT.IndependentBounds)
     lower = init_param(m, bounds.lower)
-    if typeof(bounds.upper) <: QMDPSolver
-        qmdp = solve(bounds.upper, m)
-        upper = (p, b)->value(qmdp, b)
+    upper_policy = init_param(m, bounds.upper)
+    if typeof(upper_policy) <: AlphaVectorPolicy
+        upper = (p, b)->value(upper_policy, b)
     else
-        upper = init_param(m, bounds.upper)
+        upper = upper_policy
     end
     ARDESPOT.IndependentBounds(lower, upper, bounds.check_terminal, bounds.consistency_fix_thresh)
 end
@@ -170,10 +170,10 @@ end
 @everywhere POMDPs.action(p::RandPolicy, b) = action(p.policy, b)
 
 # include("LidarRoombaTest.jl")
-include("BumperRoombaTest.jl")
+# include("BumperRoombaTest.jl")
 # include("RSTest.jl")
 # include("LTTest.jl")
-# include("LightDarkTest.jl")
+include("LightDarkTest.jl")
 
 # Not ready yet:
 # include("VDPTagTest.jl")
