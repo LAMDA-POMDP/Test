@@ -1,13 +1,5 @@
 @everywhere using RockSample
 
-@everywhere function fixed_zeta(d, k)
-    1
-end
-
-@everywhere function lower_bounded_zeta(d, k)
-    max(0.8, 1 - (0.2*k + 0.2*(1-d)))
-end
-
 # maps = [(7, 8), (11, 11), (15, 15)]
 maps = [(11, 11), (15, 15)]
 # maps = [(15, 15),]
@@ -22,19 +14,17 @@ for k in 1:length(maps)
     bounds = AdaOPS.IndependentBounds(FOValue(move_east), POValue(qmdp), check_terminal=true, consistency_fix_thresh=1e-5)
 
     adaops_list = [
-                # :default_action=>[move_east,],
                 :bounds=>[bounds,],
-                :delta=>[0.05, 0.1, 0.2],
-                :m_init=>[100],
-                :sigma=>[2.0],
+                :delta=>[0.1],
+                :m_min=>[100],
+                :m_max=>[200, 300],
                 :num_b=>[250_000],
                 ]
     adaops_list_labels = [
-                        # ["MoveEast",],
                         ["(MoveEast, QMDP)",],
-                        [0.05, 0.1, 0.2],
+                        [0.1],
                         [100],
-                        [2.0],
+                        [200, 300],
                         [250_000],
                         ]
 
@@ -45,17 +35,19 @@ for k in 1:length(maps)
         :default_action=>[move_east],
         :bounds=>[qmdp_bounds],
         :K=>[100],
-        :beta=>[0, 0.3],
-        :adjust_zeta=>[fixed_zeta, lower_bounded_zeta],
+        :beta=>[0],
+        :adjust_zeta=>[(d,k)->1.0, (d,k)->lower_bounded_zeta(d,k,0.9)],
+        :impl=>[:gap, :val],
         :C=>[4]
         ]
 
     bsdespot_list_labels = [
         ["move_east"],
         ["(MoveEast, QMDP)"],
-        [100,],
-        [0, 0.3],
+        [100],
+        [0],
         ["fixed zeta", "lower bounded zeta"],
+        [:gap, :value],
         [4,]
         ]
 
@@ -76,20 +68,20 @@ for k in 1:length(maps)
 
     # Solver list
     solver_list = [
-        # BS_DESPOTSolver=>bsdespot_list, 
+        BS_DESPOTSolver=>bsdespot_list, 
         # POMCPOWSolver=>pomcpow_list,
-        AdaOPSSolver=>adaops_list,
+        # AdaOPSSolver=>adaops_list,
     ]
     solver_list_labels = [
-        # bsdespot_list_labels,
+        bsdespot_list_labels,
         # pomcpow_list_labels,
-        adaops_list_labels,
+        # adaops_list_labels,
     ]
 
     solver_labels = [
-        # "BSDESPOT",
+        "BSDESPOT",
         # "POMCPOW",
-        "AdaOPS",
+        # "AdaOPS",
     ]
 
     episodes_per_domain = 10

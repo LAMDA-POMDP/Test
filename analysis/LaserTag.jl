@@ -93,8 +93,7 @@ b0 = initialstate(m)
 s0 = rand(b0)
 solver = AdaOPSSolver(bounds=bounds,
                         delta=0.3,
-                        m_init=10,
-                        sigma=5,
+                        m_min=10,
                         grid=grid,
                         zeta=0.03,
                         bounds_warnings=true,

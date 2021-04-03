@@ -129,7 +129,7 @@ mutable struct AdaptiveParticleFilter{PM,RM,RS,RNG<:AbstractRNG} <: Updater
     predict_model::PM
     reweight_model::RM
     resampler::RS
-    m_init::Int
+    m_min::Int
     zeta::Float64
     MESS::Function
     ESS::Bool
@@ -138,8 +138,8 @@ mutable struct AdaptiveParticleFilter{PM,RM,RS,RNG<:AbstractRNG} <: Updater
 end
 
 ## Constructors ##
-function AdaptiveParticleFilter(model, resampler, m_init::Integer; zeta::Float64=0.1, MESS::Function=KLDSampleSize, ESS::Bool=true, grid=nothing, rng::AbstractRNG=Random.GLOBAL_RNG)
-    return AdaptiveParticleFilter(model, model, resampler, m_init, zeta, MESS, ESS, grid, rng)
+function AdaptiveParticleFilter(model, resampler, m_min::Integer; zeta::Float64=0.1, MESS::Function=KLDSampleSize, ESS::Bool=true, grid=nothing, rng::AbstractRNG=Random.GLOBAL_RNG)
+    return AdaptiveParticleFilter(model, model, resampler, m_min, zeta, MESS, ESS, grid, rng)
 end
 
 function ParticleFilters.update(up::AdaptiveParticleFilter, b::WPFBelief, a, o)
@@ -147,7 +147,7 @@ function ParticleFilters.update(up::AdaptiveParticleFilter, b::WPFBelief, a, o)
     wm = Float64[]
     if EffectiveSampleSize(b) < n_particles(b) / 2.0
         RS = typeof(up.resampler)
-        n = up.m_init
+        n = up.m_min
         curr_particle_num = 0
         if up.grid !== nothing
             access_cnt = zeros_like(up.grid)
@@ -191,7 +191,7 @@ function ParticleFilters.update(up::AdaptiveParticleFilter, b::WPFBelief, a, o)
             if up.grid !== nothing
                 MESS = up.MESS(k, up.zeta)
             else
-                MESS = up.m_init
+                MESS = up.m_min
             end
             curr_particle_num = n
             n = min(ceil(Int, curr_particle_num*MESS/ESS), MAX_SAMPLE_SIZE)
@@ -216,7 +216,7 @@ end
 function POMDPs.initialize_belief(up::AdaptiveParticleFilter, b)
     pm = particle_memory(up.predict_model)
     wm = Float64[]
-    n = up.m_init
+    n = up.m_min
     curr_particle_num = 0
     if up.grid !== nothing
         access_cnt = zeros_like(up.grid)
@@ -243,7 +243,7 @@ function POMDPs.initialize_belief(up::AdaptiveParticleFilter, b)
         if up.grid !== nothing
             MESS = up.MESS(k, up.zeta)
         else
-            MESS = up.m_init
+            MESS = up.m_min
         end
         curr_particle_num = n
         n = min(ceil(Int, MESS), MAX_SAMPLE_SIZE)

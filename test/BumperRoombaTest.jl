@@ -1,4 +1,4 @@
-@everywhere using Roomba
+@everywhere using AA228FinalProject
 
 max_speed = 5.0
 speed_interval = 2.0
@@ -13,19 +13,21 @@ let k = 0
         return pomdp
     end
 end
-# Use lidar
+
+# Use Bumper
 pomdp = bumper_roomba_gen
 
 # Belief updater
 num_particles = 30000 # number of particles in belief
-pos_noise_coeff = 0.3
-ori_noise_coeff = 0.1
-belief_updater = (m)->BasicParticleFilter(m, POMDPResampler(num_particles, BumperResampler(num_particles, m, pos_noise_coeff, ori_noise_coeff)), num_particles)
+v_noise_coeff = 0.3
+om_noise_coeff = 0.1
+belief_updater = (m)->RoombaParticleFilter(m, num_particles, v_noise_coeff, om_noise_coeff)
 
 grid = RectangleGrid(range(-25, stop=15, length=201),
-                    range(-20, stop=5, length=101),
-                    range(0, stop=2*pi, length=61),
-                    range(0, stop=1, length=2)) # Create the interpolating grid
+                   range(-20, stop=5, length=126),
+                   range(0, stop=2*pi, length=61),
+                   range(0, stop=1, length=2)) # Create the interpolating grid
+
 # grid = RectangleGrid(range(-25, stop=15, length=101),
 #                    range(-20, stop=5, length=51),
 #                    range(0, stop=2*pi, length=31),
@@ -36,38 +38,62 @@ approx_solver = LocalApproximationValueIterationSolver(interp,
                                                         verbose=true,
                                                         max_iterations=1000)
 
-running = RunningSolver()
+@everywhere struct BumperRoombaBounds{M}
+    fib::AlphaVectorPolicy
+    blind::AlphaVectorPolicy
+    m::M
+    states::Vector{Int}
+end
+
+@everywhere function AdaOPS.bounds!(L::Vector{Float64}, U::Vector{Float64}, bd::BumperRoombaBounds, pomdp::RoombaPOMDP, b::WPFBelief, W::Vector{Vector{Float64}}, obs::Vector{Bool}, max_depth::Int, bounds_warning::Bool)
+    resize!(bd.states, n_particles(b))
+    for (i, s) in enumerate(particles(b))
+        bd.states[i] = convert_s(Int, s, bd.m)
+    end
+    n_states = AA228FinalProject.n_states(bd.m)
+    @inbounds for i in eachindex(W)
+        # belief_vec = sparsevec(bd.states, W[i]/sum(W[i]), n_states)
+        belief_vec = WeightedParticleBelief(bd.states, W[i])
+        U[i] = value(bd.fib, belief_vec)
+        L[i] = value(bd.blind, belief_vec)
+    end
+    return L, U
+end
+
+@everywhere struct BumperRoombaBoundsSolver <: Solver end
+
+@everywhere function POMDPs.solve(s::BumperRoombaBoundsSolver, m::BumperPOMDP)
+    mdp = AA228FinalProject.mdp(m)
+    discrete_m = RoombaPOMDP(sensor=m.sensor, mdp=RoombaMDP(config=mdp.config, aspace=mdp.aspace, v_max=mdp.v_max, sspace=DiscreteRoombaStateSpace(41, 26, 20)))
+    fib = solve(FIBSolver(), discrete_m)
+    blind = solve(BlindPolicySolver(), discrete_m)
+    BumperRoombaBounds(fib, blind, discrete_m, Int[])
+end
 
 # For AdaOPS
-@everywhere Base.convert(::SVector{4,Float64}, s::RoombaState) = SVector{4,Float64}(s)
-grid = StateGrid(range(-25, stop=15, length=7)[2:end-1],
-                range(-20, stop=5, length=5)[2:end-1],
-                range(0, stop=2*pi, length=4)[2:end-1],
-                [1.])
-splfu_bounds = AdaOPS.IndependentBounds(SemiPORollout(running), FOValue(approx_solver), check_terminal=true)
-flfu_bounds = AdaOPS.IndependentBounds(FORollout(running), FOValue(approx_solver), check_terminal=true)
-adaops_list = [:default_action=>[running], 
-                    :bounds=>[splfu_bounds],
+@everywhere Base.convert(::Type{SVector{3,Float64}}, s::RoombaState) = SVector{3,Float64}(s.x, s.y, s.theta)
+grid = StateGrid(range(-25, stop=15, length=9)[2:end-1],
+                range(-20, stop=5, length=6)[2:end-1],
+                range(0, stop=2*pi, length=5)[2:end-1])
+
+bounds = BumperRoombaBoundsSolver()
+adaops_list = [
+                    :bounds=>[bounds],
                     :delta=>[0.0],
                     :grid=>[grid],
-                    :m_init=>[10],
-                    :sigma=>[2, 3, 5],
-                    :zeta=>[0.1, 0.2],
-                    :bounds_warnings=>[false,],
+                    :max_occupied_bins=>[(5*8-3*6)*4],
+                    :m_max=>[100, 200, 300],
 		    ]
 
-adaops_list_labels = [["Running",], 
-                    ["(SemiPO_Running, MDP)"],
+adaops_list_labels = [
+                    ["(Blind, FIB)"],
                     [0.0],
                     ["FullGrid"],
-                    [10],
-                    [2, 3, 5],
-                    [0.1, 0.2],
-                    [false],
+                    [(5*8-3*6)*6],
+                    [100, 200, 300],
             ]
 
 # ARDESPOT
-bounds = ARDESPOT.IndependentBounds(ARDESPOT.DefaultPolicyLB(running), ARDESPOT.FullyObservableValueUB(approx_solver), check_terminal=true)
 ardespot_list = [:default_action=>[running,], 
                 :bounds=>[bounds,],
                 :lambda=>[0.1, 0.3],
@@ -83,14 +109,14 @@ ardespot_list_labels = [["Running",],
 
 # For POMCPOW
 mdp_estimator = FOValue(approx_solver)
-pomcpow_list = [:default_action=>[running,], 
+pomcpow_list = [
                 :estimate_value=>[mdp_estimator],
                 :tree_queries=>[100000,], 
                 :max_time=>[1.0,], 
                 :k_observation=>[1.0, 2.0],
                 :alpha_observation=>[1.0, 1/300],
                 :criterion=>[MaxUCB(100.)]]
-pomcpow_list_labels = [["Running",], 
+pomcpow_list_labels = [
                         ["MDPValue"],
                         [100000,], 
                         [1.0,], 

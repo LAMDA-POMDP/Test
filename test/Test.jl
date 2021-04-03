@@ -1,12 +1,12 @@
 # global variables
-max_workers = 2
+max_workers = 4
 
 # set up parallel environment
 using Pkg
 Pkg.activate(".")
 using Distributed
 addprocs(max_workers, exeflags="--project") # create n workers
-cd("./results")
+cd("results")
 
 @everywhere[
     using POMDPs
@@ -30,6 +30,7 @@ cd("./results")
     using DiscreteValueIteration
     using LocalApproximationValueIteration
 
+    using SparseArrays
     using LinearAlgebra
     using StaticArrays
 
@@ -147,27 +148,9 @@ end
     return util
 end
 
-@everywhere struct ModePolicy <: Policy
-    policy::Policy
+@everywhere function lower_bounded_zeta(d, k, zeta=0.8)
+    max(zeta, 1 - (0.2*k + 0.2*(1-d)))
 end
-@everywhere struct ModeSolver{P<:Union{Solver,Policy}} <: Solver
-    solver::P
-end
-@everywhere POMDPs.solve(solver::ModeSolver{P}, pomdp) where P <: Solver = ModePolicy(solve(solver.solver, pomdp))
-@everywhere POMDPs.solve(solver::ModeSolver{P}, pomdp) where P <: Policy = ModePolicy(solver.solver)
-@everywhere POMDPs.action(p::ModePolicy, b::AbstractParticleBelief) = action(p.policy, mode(b))
-@everywhere POMDPs.action(p::ModePolicy, b) = action(p.policy, b)
-
-@everywhere struct RandPolicy <: Policy
-    policy::Policy
-end
-@everywhere struct RandSolver{P<:Union{Solver,Policy}} <: Solver
-    solver::P
-end
-@everywhere POMDPs.solve(solver::RandSolver{P}, pomdp) where P <: Solver = RandPolicy(solve(solver.solver, pomdp))
-@everywhere POMDPs.solve(solver::RandSolver{P}, pomdp) where P <: Policy = RandPolicy(solver.solver)
-@everywhere POMDPs.action(p::RandPolicy, b::AbstractParticleBelief) = action(p.policy, rand(b))
-@everywhere POMDPs.action(p::RandPolicy, b) = action(p.policy, b)
 
 # include("LidarRoombaTest.jl")
 # include("BumperRoombaTest.jl")

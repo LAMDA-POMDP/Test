@@ -22,21 +22,19 @@ grid = StateGrid(range(1, stop=pomdp.size, length=5)[2:end],
 # splpu_bounds = AdaOPS.IndependentBounds(SemiPORollout(qmdp), POValue(qmdp))
 pu_bounds = AdaOPS.IndependentBounds(FORollout(random), POValue(qmdp))
 
-adaops_list = [:default_action=>[random_policy],
+adaops_list = [
             :bounds=>[pu_bounds],
             :delta=>[0.03, 0.1],
             :grid=>[grid],
-            :m_init=>[40],
-            :sigma=>[10, 20],
+            :m_min=>[40],
             :zeta=>[0.06, 0.1],
             :bounds_warnings=>[false]
             ]
-adaops_list_labels = [["Random",],
+adaops_list_labels = [
                     ["(RandomRollout, QMDP)"],
                     [0.03, 0.1],
                     ["FullGrid"],
                     [40],
-                    [10, 20],
                     [0.06, 0.1],
                     [false]
                     ]

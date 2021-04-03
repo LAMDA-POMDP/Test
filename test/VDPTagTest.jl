@@ -25,22 +25,18 @@ bounds = AdaOPS.IndependentBounds(random_estimator, mdp(pomdp).tag_reward, check
 spl_bounds = AdaOPS.IndependentBounds(SemiPORollout(manage_uncertainty), mdp(pomdp).tag_reward, check_terminal=true, consistency_fix_thresh=1e-5)
 fl_bounds = AdaOPS.IndependentBounds(FORollout(to_next_ml), mdp(pomdp).tag_reward, check_terminal=true, consistency_fix_thresh=1e-5)
 adaops_list = [
-                :default_action=>[manage_uncertainty,], 
                 :bounds=>[bounds, fl_bounds],
                 :delta=>[0.5, 1.0],
                 :grid=>[grid],
-                :m_init=>[10, 20],
-                :sigma=>[2.0, 3.0, 4.0],
+                :m_min=>[10, 20],
                 :zeta=>[0.03, 0.1, 0.3],
 ]
 
 adaops_list_labels = [
-                    ["ManageUncertainty",], 
                     ["(RandomRollout, $(mdp(pomdp).tag_reward)", "(FO_ToNextML, $(mdp(pomdp).tag_reward)"],
                     [0.5, 1.0],
                     ["FullGrid"],
                     [10, 20],
-                    [2.0, 3.0, 4.0],
                     [0.03, 0.1, 0.3],
 ]
 # ARDESPOT

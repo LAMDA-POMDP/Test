@@ -26,21 +26,17 @@ pu_bounds = AdaOPS.IndependentBounds(-20.0, POValue(qmdp), check_terminal=true, 
 splpu_bounds = AdaOPS.IndependentBounds(SemiPORollout(qmdp), POValue(qmdp), check_terminal=true, consistency_fix_thresh=1e-5)
 
 adaops_list = [
-            #:default_action=>[move_towards_policy,],
             :bounds=>[pu_bounds],
             :delta=>[0.05, 0.1, 0.2],
             :grid=>[nothing],
-            :m_init=>[10, 20],
-            :sigma=>[3, 4, 5],
+            :m_min=>[10, 20],
             :bounds_warnings=>[false],
             ]
 adaops_list_labels = [
-                    #["MoveTowards",],
                     ["20, QMDP"],
                     [0.05, 0.1, 0.2],
                     ["NullGrid"],
                     [10, 20],
-                    [3, 4, 5],
                     [false],
                     ]
 

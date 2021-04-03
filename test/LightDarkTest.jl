@@ -9,28 +9,20 @@ random = solve(RandomSolver(), pomdp)
 
 # For AdaOPS
 @everywhere Base.convert(::Type{SVector{1,Float64}}, s::LightDark1DState) = SVector{1,Float64}(s.y)
-grid = StateGrid(range(0, stop=15, length=11)[1:end-1])
+grid = StateGrid(range(-10, stop=15, length=26))
 bounds = AdaOPS.IndependentBounds(FORollout(random), pomdp.correct_r, check_terminal=true)
 adaops_list = [
-                :default_action=>[random],
                 :bounds=>[bounds],
-                :delta=>[0.3, 0.6, 0.9],
+                :delta=>[1.0],
+                :m_min=>[10],
                 :grid=>[grid],
-                :m_init=>[30, 60],
-                :sigma=>[2],
-                :zeta=>[0.03],
-                :bounds_warnings=>[false,]
 		    ]
 
 adaops_list_labels = [
-                ["Random"],
                 ["Random, $(pomdp.correct_r)"],
-                [0.3, 0.6, 0.9],
+                [1.0],
+                [10],
                 ["FullGrid"],
-                [30, 60],
-                [2],
-                [0.03],
-                [false],
 		    ]
 # ARDESPOT
 bounds = ARDESPOT.IndependentBounds(ARDESPOT.DefaultPolicyLB(random), pomdp.correct_r, check_terminal=true)
@@ -73,18 +65,18 @@ pomcpow_list_labels = [
 # Solver list
 solver_list = [
                 AdaOPSSolver=>adaops_list, 
-                DESPOTSolver=>ardespot_list,
-                POMCPOWSolver=>pomcpow_list,
+                # DESPOTSolver=>ardespot_list,
+                # POMCPOWSolver=>pomcpow_list,
                 ]
 solver_list_labels = [
                     adaops_list_labels, 
-                    ardespot_list_labels,
-                    pomcpow_list_labels,
+                    # ardespot_list_labels,
+                    # pomcpow_list_labels,
                     ]
 solver_labels = [
                 "ADAOPS",
-                "ARDESPOT",
-                "POMCPOW",
+                # "ARDESPOT",
+                # "POMCPOW",
                 ]
 
                 
