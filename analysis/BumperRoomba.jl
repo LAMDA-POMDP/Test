@@ -32,33 +32,6 @@ using Printf
 using LinearAlgebra
 using SparseArrays
 
-# Belief Updater
-struct POMDPResampler{R}
-    n::Int
-    r::R
-end
-
-POMDPResampler(n, r=LowVarianceResampler(n)) = POMDPResampler(n, r)
-
-function ParticleFilters.resample(r::POMDPResampler,
-                                  bp::WeightedParticleBelief,
-                                  pm::POMDP,
-                                  rm::POMDP,
-                                  b,
-                                  a,
-                                  o,
-                                  rng)
-
-    if weight_sum(bp) == 0.0
-        # no appropriate particles - resample from the initial distribution
-        new_ps = [rand(rng, initialstate(pm)) for i in 1:r.n]
-        return ParticleCollection(new_ps)
-    else
-        # normal resample
-        return resample(r.r, bp, rng)
-    end
-end
-
 function ParticleFilters.unnormalized_util(p::AlphaVectorPolicy, b::AbstractParticleBelief)
     util = zeros(length(alphavectors(p)))
     for (i, s) in enumerate(particles(b))

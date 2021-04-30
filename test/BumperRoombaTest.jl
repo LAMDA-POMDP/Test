@@ -18,20 +18,20 @@ end
 pomdp = bumper_roomba_gen
 
 # Belief updater
-num_particles = 30000 # number of particles in belief
+num_particles = 50000 # number of particles in belief
 v_noise_coeff = 0.3
 om_noise_coeff = 0.1
 belief_updater = (m)->RoombaParticleFilter(m, num_particles, v_noise_coeff, om_noise_coeff)
 
-grid = RectangleGrid(range(-25, stop=15, length=201),
-                   range(-20, stop=5, length=126),
-                   range(0, stop=2*pi, length=61),
-                   range(0, stop=1, length=2)) # Create the interpolating grid
+# grid = RectangleGrid(range(-25, stop=15, length=201),
+#                    range(-20, stop=5, length=126),
+#                    range(0, stop=2*pi, length=61),
+#                    range(-1, stop=1, length=3)) # Create the interpolating grid
 
-# grid = RectangleGrid(range(-25, stop=15, length=101),
-#                    range(-20, stop=5, length=51),
-#                    range(0, stop=2*pi, length=31),
-#                    range(0, stop=1, length=2)) # Create the interpolating grid
+grid = RectangleGrid(range(-25, stop=15, length=41),
+                   range(-20, stop=5, length=26),
+                   range(0, stop=2*pi, length=13),
+                   range(-1, stop=1, length=3)) # Create the interpolating grid
 interp = LocalGIFunctionApproximator(grid)  # Create the local function approximator using the grid
 
 approx_solver = LocalApproximationValueIterationSolver(interp,
@@ -72,17 +72,20 @@ end
 
 # For AdaOPS
 @everywhere Base.convert(::Type{SVector{3,Float64}}, s::RoombaState) = SVector{3,Float64}(s.x, s.y, s.theta)
-grid = StateGrid(range(-25, stop=15, length=9)[2:end-1],
-                range(-20, stop=5, length=6)[2:end-1],
-                range(0, stop=2*pi, length=5)[2:end-1])
 
-bounds = BumperRoombaBoundsSolver()
+l = 8
+w = 5
+t = 4
+grid = StateGrid(range(-25, stop=15, length=l+1)[2:end-1],
+                    range(-20, stop=5, length=w+1)[2:end-1],
+                    range(0, stop=2*pi, length=t+1)[2:end-1])
+
 adaops_list = [
-                    :bounds=>[bounds],
-                    :delta=>[0.0],
-                    :grid=>[grid],
-                    :max_occupied_bins=>[(5*8-3*6)*4],
-                    :m_max=>[100, 200, 300],
+                :bounds=>[BumperRoombaBoundsSolver()],
+                :delta=>[0.3],
+                :grid=>[grid],
+                :max_occupied_bins=>[convert(Int, 11*l*w*t/20)],
+                :m_min=>[10, 30]
 		    ]
 
 adaops_list_labels = [

@@ -14,14 +14,14 @@ bounds = AdaOPS.IndependentBounds(FORollout(random), pomdp.correct_r, check_term
 adaops_list = [
                 :bounds=>[bounds],
                 :delta=>[1.0],
-                :m_min=>[10],
+                :m_min=>[10, 30],
                 :grid=>[grid],
 		    ]
 
 adaops_list_labels = [
                 ["Random, $(pomdp.correct_r)"],
                 [1.0],
-                [10],
+                [10, 30],
                 ["FullGrid"],
 		    ]
 # ARDESPOT
@@ -91,6 +91,6 @@ parallel_experiment(pomdp,
                     solver_labels=solver_labels,
                     solver_list_labels=solver_list_labels,
                     max_queue_length=100,
-                    belief_updater=(m)->BasicParticleFilter(m, POMDPResampler(30000), 30000),
+                    belief_updater=(m)->BasicParticleFilter(m, LowVarianceResampler(30000), 30000),
                     experiment_label="LightDark",
                     full_factorial_design=true)

@@ -179,7 +179,7 @@ function ParticleFilters.update(up::AdaptiveParticleFilter, b::WPFBelief, a, o)
                 end
             end
             if up.ESS
-                if likelihood_sum == 0.0
+                if likelihood_sum ≈ 0.0
                     curr_particle_num = n
                     n = min(curr_particle_num * 2, MAX_SAMPLE_SIZE)
                     continue
@@ -258,7 +258,7 @@ function ParticleFilters.resample(r, bp::WPFBelief, predict_model, reweight_mode
         end
     end
     bp.weight_sum = sum(bp.weights)
-    if bp.weight_sum == 0.0
+    if bp.weight_sum ≈ 0.0
         error("Particle filter update error: all states in the particle collection were terminal.")
     end
     resample(r, bp, rng)

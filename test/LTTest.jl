@@ -20,24 +20,23 @@ mdp = ValueIterationSolver(max_iterations=1000, include_Q=false)
 @everywhere POMDPs.action(p::AlphaVectorPolicy, s::LTState) = action(p, ParticleCollection([s]))
 
 # For AdaOPS
-@everywhere convert(::Type{SVector{2, Float64}}, s::LTState) = SVector{2,Float64}(s.opponent)
+@everywhere Base.convert(::Type{SVector{2, Float64}}, s::LTState) = SVector{2,Float64}(s.opponent)
 grid = StateGrid([2:7;], [2:11;])
 pu_bounds = AdaOPS.IndependentBounds(-20.0, POValue(qmdp), check_terminal=true, consistency_fix_thresh=1e-5)
-splpu_bounds = AdaOPS.IndependentBounds(SemiPORollout(qmdp), POValue(qmdp), check_terminal=true, consistency_fix_thresh=1e-5)
 
 adaops_list = [
             :bounds=>[pu_bounds],
-            :delta=>[0.05, 0.1, 0.2],
-            :grid=>[nothing],
-            :m_min=>[10, 20],
-            :bounds_warnings=>[false],
+            :delta=>[0.1],
+            :grid=>[grid],
+            :m_min=>[10, 30],
+            :bounds_warnings=>[true],
             ]
 adaops_list_labels = [
-                    ["20, QMDP"],
-                    [0.05, 0.1, 0.2],
-                    ["NullGrid"],
-                    [10, 20],
-                    [false],
+                    ["-20, QMDP"],
+                    [0.1],
+                    ["FullGrid"],
+                    [10, 30],
+                    [true],
                     ]
 
 #= For ARDESPOT
@@ -120,7 +119,7 @@ parallel_experiment(gen_lasertag,
                     num_of_domains=100,
                     solver_labels=solver_labels,
                     solver_list_labels=solver_list_labels,
-                    belief_updater=(m)->BasicParticleFilter(m, POMDPResampler(30000), 30000),
-                    max_queue_length=320,
+                    belief_updater=(m)->BasicParticleFilter(m, LowVarianceResampler(30000), 30000),
+                    max_queue_length=100,
                     experiment_label="LT100_10",
                     full_factorial_design=true) 

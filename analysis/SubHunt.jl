@@ -27,32 +27,6 @@ using GridInterpolations
 using ProfileView
 using SubHunt
 
-# Belief Updater
-struct POMDPResampler{R}
-    n::Int
-    r::R
-end
-
-POMDPResampler(n, r=LowVarianceResampler(n)) = POMDPResampler(n, r)
-
-function ParticleFilters.resample(r::POMDPResampler,
-                                  bp::WeightedParticleBelief,
-                                  pm::POMDP,
-                                  rm::POMDP,
-                                  b,
-                                  a,
-                                  o,
-                                  rng)
-
-    if weight_sum(bp) == 0.0
-        # no appropriate particles - resample from the initial distribution
-        new_ps = [rand(rng, initialstate(pm)) for i in 1:r.n]
-        return ParticleCollection(new_ps)
-    else
-        # normal resample
-        return resample(r.r, bp, rng)
-    end
-end
 rng = Random.GLOBAL_RNG
 
 function ParticleFilters.unnormalized_util(p::AlphaVectorPolicy, b::AbstractParticleBelief)
@@ -111,7 +85,7 @@ info_analysis(info)
 despot = solve(despot_solver, m)
 
 num_particles = 30000
-belief_updater = (m)->BasicParticleFilter(m, POMDPResampler(num_particles), num_particles)
+belief_updater = (m)->BasicParticleFilter(m, LowVarianceResampler(num_particles), num_particles)
 @show r = simulate(RolloutSimulator(), m, adaops, belief_updater(m), b0, s0)
 @show r = simulate(RolloutSimulator(), m, despot, belief_updater(m), b0, s0)
 # let step = 1

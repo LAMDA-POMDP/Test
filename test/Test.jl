@@ -42,29 +42,43 @@ using GridInterpolations
 using LocalFunctionApproximation
 
 # Belief Updater
-@everywhere struct POMDPResampler{R}
-    n::Int
-    r::R
+@everywhere struct KLDResampler{D}
+    grid::StateGrid{D}
+    n_init::Int
+    ζ::Float64
+    η::Float64
 end
 
-@everywhere POMDPResampler(n, r=LowVarianceResampler(n)) = POMDPResampler(n, r)
+@everywhere KLDResampler(grid, n_init=prod(size(grid)), ζ=0.01, η=0.01) = KLDResampler(grid, n_init, ζ, η)
 
-@everywhere function ParticleFilters.resample(r::POMDPResampler,
-                                  bp::WeightedParticleBelief,
-                                  pm::POMDP,
-                                  rm::POMDP,
-                                  b,
-                                  a,
-                                  o,
-                                  rng)
-
-    if weight_sum(bp) == 0.0
-        # no appropriate particles - resample from the initial distribution
-        new_ps = [rand(rng, initialstate(pm)) for i in 1:r.n]
-        return ParticleCollection(new_ps)
+@everywhere function ParticleFilters.resample(r::KLDResampler,
+                                            bp::WeightedParticleBelief,
+                                            pm::POMDP,
+                                            rm::POMDP,
+                                            b,
+                                            a,
+                                            o,
+                                            rng)
+    k = 0
+    access_cnt = zeros_like(r.grid)
+    P = particles(bp)
+    W = weights(bp)
+    w_sum = 0.0
+    for (i, s) in enumerate(P)
+        if isterminal(pm, s) || W[i] <= 0.0
+            W[i] = 0.0
+        else
+            w_sum += W[i]
+            k += access(r.grid, access_cnt, s, pm)
+        end
+    end
+    if k == 0
+        b0 = initialstate(pm)
+        return ParticleCollection([rand(rng, b0) for i in 1:r.n_init])
     else
-        # normal resample
-        return resample(r.r, bp, rng)
+        bp = WeightedParticleBelief(P, W, w_sum)
+        m = ceil(Int, KLDSampleSize(k, r.ζ, r.η))
+        return resample(LowVarianceResampler(m), bp, rng)
     end
 end
 
@@ -152,11 +166,11 @@ end
     max(zeta, 1 - (0.2*k + 0.2*(1-d)))
 end
 
-# include("LidarRoombaTest.jl")
+include("LidarRoombaTest.jl")
 # include("BumperRoombaTest.jl")
 # include("RSTest.jl")
 # include("LTTest.jl")
-include("LightDarkTest.jl")
+# include("LightDarkTest.jl")
 
 # Not ready yet:
 # include("VDPTagTest.jl")

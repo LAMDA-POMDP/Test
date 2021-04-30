@@ -30,33 +30,6 @@ using AA228FinalProject
 using Printf
 using LinearAlgebra
 
-# Belief Updater
-struct POMDPResampler{R}
-    n::Int
-    r::R
-end
-
-POMDPResampler(n, r=LowVarianceResampler(n)) = POMDPResampler(n, r)
-
-function ParticleFilters.resample(r::POMDPResampler,
-                                  bp::WeightedParticleBelief,
-                                  pm::POMDP,
-                                  rm::POMDP,
-                                  b,
-                                  a,
-                                  o,
-                                  rng)
-
-    if weight_sum(bp) == 0.0
-        # no appropriate particles - resample from the initial distribution
-        new_ps = [rand(rng, initialstate(pm)) for i in 1:r.n]
-        return ParticleCollection(new_ps)
-    else
-        # normal resample
-        return resample(r.r, bp, rng)
-    end
-end
-
 function ParticleFilters.unnormalized_util(p::AlphaVectorPolicy, b::AbstractParticleBelief)
     util = zeros(length(alphavectors(p)))
     for (i, s) in enumerate(particles(b))
@@ -73,19 +46,48 @@ action_space = vec([RoombaAct(v, om) for v in 0:speed_interval:max_speed, om in 
 m = RoombaPOMDP(sensor=Lidar(), mdp=RoombaMDP(config=3, aspace=action_space, v_max=max_speed))
 
 # Belief updater
-num_particles = 50000 # number of particles in belief
-v_noise_coeff = 0.3
-om_noise_coeff = 0.1
-belief_updater = (m)->RoombaParticleFilter(m, num_particles, v_noise_coeff, om_noise_coeff)
+struct KLDResampler{D}
+    grid::StateGrid{D}
+    ζ::Float64
+    η::Float64
+end
 
-grid = RectangleGrid(range(-25, stop=15, length=201),
-                   range(-20, stop=5, length=126),
-                   range(0, stop=2*pi, length=61),
-                   range(0, stop=1, length=2)) # Create the interpolating grid
-# grid = RectangleGrid(range(-25, stop=15, length=21),
-#                     range(-20, stop=5, length=11),
-#                     range(0, stop=2*pi, length=6),
-#                     range(0, stop=1, length=2)) # Create the interpolating grid
+KLDResampler(grid, ζ=0.01, η=0.01) = KLDResampler(grid, ζ, η)
+
+function ParticleFilters.resample(r::KLDResampler,
+                                            bp::WeightedParticleBelief,
+                                            pm::POMDP,
+                                            rm::POMDP,
+                                            b,
+                                            a,
+                                            o,
+                                            rng)
+    k = 0
+    access_cnt = zeros_like(r.grid)
+    for (s, w) in weighted_particles(bp)
+        if w > 0.0
+            k += access(r.grid, access_cnt, s, pm)
+        end
+    end
+    m = ceil(Int, KLDSampleSize(k, r.ζ))
+    return resample(LowVarianceResampler(m), bp, rng)
+end
+
+Base.convert(::Type{SVector{3,Float64}}, s::RoombaState) = SVector{3,Float64}(s.x, s.y, s.theta)
+let l = 40, w = 25, t = 12, ζ=0.001, η=0.005, v_noise_coeff=0.03, om_noise_coeff=0.01, grid = StateGrid(range(-25, stop=15, length=l+1)[2:end-1],
+                    range(-20, stop=5, length=w+1)[2:end-1],
+                    range(0, stop=2*pi, length=t+1)[2:end-1])
+    global belief_updater = (m)->RoombaParticleFilter(m, ceil(Int, KLDSampleSize(convert(Int, 11*l*w*t/20), ζ, η)), v_noise_coeff, om_noise_coeff, KLDResampler(grid, ζ, η))
+end
+
+# grid = RectangleGrid(range(-25, stop=15, length=201),
+#                    range(-20, stop=5, length=126),
+#                    range(0, stop=2*pi, length=61),
+#                    range(0, stop=1, length=2)) # Create the interpolating grid
+grid = RectangleGrid(range(-25, stop=15, length=41),
+                   range(-20, stop=5, length=26),
+                   range(0, stop=2*pi, length=13),
+                   range(-1, stop=1, length=3)) # Create the interpolating grid
 interp = LocalGIFunctionApproximator(grid)  # Create the local function approximator using the grid
 
 approx_solver = LocalApproximationValueIterationSolver(interp,
@@ -111,10 +113,12 @@ function AdaOPS.bounds!(L::Vector{Float64}, U::Vector{Float64}, bd::LidarRoombaB
 end
 
 # For AdaOPS
-Base.convert(::Type{SVector{3,Float64}}, s::RoombaState) = SVector{3,Float64}(s.x, s.y, s.theta)
-grid = StateGrid(range(-25, stop=15, length=9)[2:end-1],
-                range(-20, stop=5, length=6)[2:end-1],
-                range(0, stop=2*pi, length=5)[2:end-1])
+l = 8
+w = 5
+t = 4
+grid = StateGrid(range(-25, stop=15, length=l+1)[2:end-1],
+                    range(-20, stop=5, length=w+1)[2:end-1],
+                    range(0, stop=2*pi, length=t+1)[2:end-1])
 
 random_policy = RandomPolicy(m)
 
@@ -124,9 +128,9 @@ b0 = initialstate(m)
 s0 = rand(b0)
 solver = AdaOPSSolver(bounds=bounds,
                         grid=grid,
-                        delta=0.4,
-                        m_max=200,
-                        max_occupied_bins=(5*8-3*6)*4,
+                        delta=0.3,
+                        m_min=30,
+                        max_occupied_bins=convert(Int, 11*l*w*t/20),
                         tree_in_info=true,
                         num_b=100_000
                         )

@@ -3,7 +3,8 @@ A repo for testing script.
 ## Installation
 ```julia
 Pkg> registry add git@github.com:JuliaPOMDP/Registry.git
-Pkg> add git@github.com:LAMDA-POMDP/ParallelExperiment.jl.git git@github.com:LAMDA-POMDP/BSDESPOT.jl.git git@github.com:LAMDA-POMDP/AdaOPS.jl.git git@github.com:LAMDA-POMDP/Roomba.jl.git git@github.com:LAMDA-POMDP/SubHunt.jl.git git@github.com:LAMDA-POMDP/VDPTag2.jl.git git@github.com:LAMDA-POMDP/LaserTag.jl.git git@github.com:JuliaPOMDP/RLInterface.jl.git git@github.com:JuliaPOMDP/POMDPGifs.jl.git git@github.com:LAMDA-POMDP/Multilane.jl.git git@github.com:sisl/GridInterpolations.jl.git
+# Pkg> add git@github.com:LAMDA-POMDP/ParallelExperiment.jl.git git@github.com:LAMDA-POMDP/BSDESPOT.jl.git git@github.com:LAMDA-POMDP/AdaOPS.jl.git git@github.com:LAMDA-POMDP/Roomba.jl.git git@github.com:LAMDA-POMDP/SubHunt.jl.git git@github.com:LAMDA-POMDP/VDPTag2.jl.git git@github.com:LAMDA-POMDP/LaserTag.jl.git git@github.com:JuliaPOMDP/RLInterface.jl.git git@github.com:JuliaPOMDP/POMDPGifs.jl.git git@github.com:LAMDA-POMDP/Multilane.jl.git git@github.com:sisl/GridInterpolations.jl.git
+Pkg> add https://github.com/LAMDA-POMDP/ParallelExperiment.jl https://github.com/LAMDA-POMDP/BSDESPOT.jl https://github.com/LAMDA-POMDP/AdaOPS.jl https://github.com/LAMDA-POMDP/Roomba.jl https://github.com/LAMDA-POMDP/SubHunt.jl https://github.com/LAMDA-POMDP/VDPTag2.jl https://github.com/Wu-Chenyang/LaserTag.jl https://github.com/JuliaPOMDP/RLInterface.jl https://github.com/JuliaPOMDP/POMDPGifs.jl https://github.com/LAMDA-POMDP/Multilane.jl https://github.com/sisl/GridInterpolations.jl https://github.com/Wu-Chenyang/AA228FinalProject
 Pkg> instantiate
 Pkg> precompile
 ```

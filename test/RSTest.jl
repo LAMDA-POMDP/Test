@@ -92,7 +92,7 @@ for k in 1:length(maps)
                         num_of_domains=100,
                         solver_labels=solver_labels,
                         solver_list_labels=solver_list_labels,
-                        belief_updater=(m)->BasicParticleFilter(m, POMDPResampler(30000), 30000),
+                        belief_updater=(m)->BasicParticleFilter(m, LowVarianceResampler(30000), 30000),
                         max_queue_length=4,
                         domain_queue_length=5,
                         experiment_label="RS100_10$(maps[k])",

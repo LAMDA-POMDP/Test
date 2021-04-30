@@ -27,32 +27,6 @@ using GridInterpolations
 using ProfileView
 using LaserTag
 
-# Belief Updater
-struct POMDPResampler{R}
-    n::Int
-    r::R
-end
-
-POMDPResampler(n, r=LowVarianceResampler(n)) = POMDPResampler(n, r)
-
-function ParticleFilters.resample(r::POMDPResampler,
-                                  bp::WeightedParticleBelief,
-                                  pm::POMDP,
-                                  rm::POMDP,
-                                  b,
-                                  a,
-                                  o,
-                                  rng)
-
-    if weight_sum(bp) == 0.0
-        # no appropriate particles - resample from the initial distribution
-        new_ps = [rand(rng, initialstate(pm)) for i in 1:r.n]
-        return ParticleCollection(new_ps)
-    else
-        # normal resample
-        return resample(r.r, bp, rng)
-    end
-end
 function move_towards(pomdp, b)
     s = typeof(b) <: LTState ? b : rand(b)
     # try to sneak up diagonally
@@ -78,24 +52,22 @@ function ParticleFilters.unnormalized_util(p::AlphaVectorPolicy, b::AbstractPart
 end
 
 m = gen_lasertag()
-qmdp = solve(QMDPSolver(max_iterations=1000, verbose=true), m)
+qmdp = solve(QMDPSolver(max_iterations=1000, verbose=false), m)
 POMDPs.action(p::AlphaVectorPolicy, s::LTState) = action(p, ParticleCollection([s]))
 
 # For AdaOPS
 Base.convert(::Type{SVector{2,Float64}}, s::LTState) = s.opponent
 grid = StateGrid([2:7;], [2:11;])
-pu_bounds = AdaOPS.IndependentBounds(FORollout(RandomSolver()), POValue(qmdp), check_terminal=true, consistency_fix_thresh=1e-5)
-bounds = AdaOPS.IndependentBounds(-20, POValue(qmdp), check_terminal=true, consistency_fix_thresh=1e-5)
-# bounds = AdaOPS.IndependentBounds(SemiPORollout(qmdp), POValue(qmdp), check_terminal=true, consistency_fix_thresh=1e-5)
+bounds = AdaOPS.IndependentBounds(-20.0, POValue(qmdp), check_terminal=true, consistency_fix_thresh=1e-5)
+
 despot_bounds = ARDESPOT.IndependentBounds(ARDESPOT.DefaultPolicyLB(qmdp), (p,b)->value(qmdp,b), check_terminal=true, consistency_fix_thresh=1e-5)
 despot_solver = DESPOTSolver(bounds=despot_bounds, K=300, tree_in_info=true, default_action=move_towards_policy, bounds_warnings=false)
 b0 = initialstate(m)
 s0 = rand(b0)
 solver = AdaOPSSolver(bounds=bounds,
                         delta=0.3,
-                        m_min=10,
+                        m_min=30,
                         grid=grid,
-                        zeta=0.03,
                         bounds_warnings=true,
                         tree_in_info=true,
                         # default_action=move_towards_policy,
@@ -113,7 +85,7 @@ info_analysis(info)
 # @profview action(adaops, b0)
 
 num_particles = 30000
-belief_updater = (m)->BasicParticleFilter(m, POMDPResampler(num_particles), num_particles)
+belief_updater = (m)->BasicParticleFilter(m, LowVarianceResampler(num_particles), num_particles)
 # @show simulate(HistoryRecorder(max_steps=100), m, despot, belief_updater(m), b0, s0)
 hist = simulate(HistoryRecorder(max_steps=100), m, adaops, belief_updater(m), b0, s0)
 @show discounted_reward(hist)

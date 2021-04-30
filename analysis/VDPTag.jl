@@ -27,32 +27,6 @@ using GridInterpolations
 using ProfileView
 using VDPTag2
 
-# Belief Updater
-struct POMDPResampler{R}
-    n::Int
-    r::R
-end
-
-POMDPResampler(n, r=LowVarianceResampler(n)) = POMDPResampler(n, r)
-
-function ParticleFilters.resample(r::POMDPResampler,
-                                  bp::WeightedParticleBelief,
-                                  pm::POMDP,
-                                  rm::POMDP,
-                                  b,
-                                  a,
-                                  o,
-                                  rng)
-
-    if weight_sum(bp) == 0.0
-        # no appropriate particles - resample from the initial distribution
-        new_ps = [rand(rng, initialstate(pm)) for i in 1:r.n]
-        return ParticleCollection(new_ps)
-    else
-        # normal resample
-        return resample(r.r, bp, rng)
-    end
-end
 function VDPUpper(pomdp, b)
     if all(isterminal(pomdp, s) for s in particles(b))
         return 0.0
@@ -127,7 +101,7 @@ info_analysis(info)
 @profview action(adaops, b0)
 
 # num_particles = 30000
-# belief_updater = (m)->BasicParticleFilter(m, POMDPResampler(num_particles), num_particles)
+# belief_updater = (m)->BasicParticleFilter(m, LowVarianceResampler(num_particles), num_particles)
 # @show r = simulate(RolloutSimulator(max_steps=100), m, despot, belief_updater(m), b0, s0)
 # # @show r = simulate(RolloutSimulator(max_steps=100), m, pomcpow, belief_updater(m), b0, s0)
 # hist = simulate(HistoryRecorder(max_steps=100), m, adaops, belief_updater(m), b0, s0)

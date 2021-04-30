@@ -29,33 +29,6 @@ using Statistics
 using Combinatorics
 using ProfileView
 
-# Belief Updater
-struct POMDPResampler{R}
-    n::Int
-    r::R
-end
-
-POMDPResampler(n, r=LowVarianceResampler(n)) = POMDPResampler(n, r)
-
-function ParticleFilters.resample(r::POMDPResampler,
-                                  bp::WeightedParticleBelief,
-                                  pm::POMDP,
-                                  rm::POMDP,
-                                  b,
-                                  a,
-                                  o,
-                                  rng)
-
-    if weight_sum(bp) == 0.0
-        # no appropriate particles - resample from the initial distribution
-        new_ps = [rand(rng, initialstate(pm)) for i in 1:r.n]
-        return ParticleCollection(new_ps)
-    else
-        # normal resample
-        return resample(r.r, bp, rng)
-    end
-end
-
 function ParticleFilters.unnormalized_util(p::AlphaVectorPolicy, b::AbstractParticleBelief)
     util = zeros(length(alphavectors(p)))
     for (i, s) in enumerate(particles(b))
@@ -64,8 +37,7 @@ function ParticleFilters.unnormalized_util(p::AlphaVectorPolicy, b::AbstractPart
     return util
 end
 
-map = (11,11)
-m = rsgen(map)
+m = RockSamplePOMDP(11, 11)
 
 # qmdp = solve(RSQMDPSolver(), m)
 mdp = solve(RSMDPSolver(), m)
@@ -79,8 +51,7 @@ s0 = rand(b0)
 bounds = AdaOPS.IndependentBounds(FOValue(rs_exit), FOValue(mdp), check_terminal=true, consistency_fix_thresh=1e-5)
 
 adaops_solver = AdaOPSSolver(bounds=bounds,
-                        delta=0.7,
-                        zeta=0.2,
+                        delta=0.1,
                         m_min=30,
                         bounds_warnings=true,
                         # tree_in_info=true,
@@ -110,7 +81,7 @@ D = info[:tree]
 @profview action(adaops, b0)
 
 # num_particles = 30000
-# belief_updater = (m)->BasicParticleFilter(m, POMDPResampler(num_particles), num_particles)
+# belief_updater = (m)->BasicParticleFilter(m, LowVarianceResampler(num_particles), num_particles)
 # @show r = simulate(RolloutSimulator(), m, despot, belief_updater(m), b0, s0)
 # @show r = simulate(RolloutSimulator(), m, adaops, belief_updater(m), b0, s0)
 # let step = 1

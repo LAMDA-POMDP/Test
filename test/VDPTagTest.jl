@@ -116,7 +116,7 @@ parallel_experiment(pomdp,
                     solver_labels=solver_labels,
                     solver_list_labels=solver_list_labels,
                     max_queue_length=960,
-                    belief_updater=(m)->BasicParticleFilter(m, POMDPResampler(30000), 30000),
+                    belief_updater=(m)->BasicParticleFilter(m, LowVarianceResampler(30000), 30000),
                     experiment_label="VDPTag1000",
                     full_factorial_design=true)
 # # Solver list
@@ -148,7 +148,7 @@ parallel_experiment(pomdp,
 #                     solver_labels=solver_labels,
 #                     solver_list_labels=solver_list_labels,
 #                     max_queue_length=900,
-#                     belief_updater=(m)->BasicParticleFilter(m, POMDPResampler(30000), 30000),
+#                     belief_updater=(m)->BasicParticleFilter(m, LowVarianceResampler(30000), 30000),
 #                     experiment_label="VDPTag*100_addis",
 #                     full_factorial_design=true)
 
@@ -181,6 +181,6 @@ parallel_experiment(cpomdp,
                     solver_labels=solver_labels,
                     solver_list_labels=solver_list_labels,
                     max_queue_length=300,
-                    belief_updater=(m)->BasicParticleFilter(m, POMDPResampler(30000), 30000),
+                    belief_updater=(m)->BasicParticleFilter(m, LowVarianceResampler(30000), 30000),
                     experiment_label="VDPTag*100_con_para1",
                     full_factorial_design=true)=#

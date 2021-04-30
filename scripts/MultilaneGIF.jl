@@ -74,7 +74,7 @@ frames = Frames(MIME("image/png"), fps=fpstep/pp.dt)
     rollouts = make_rollouts(planner, tree)
     nwr = NodeWithRollouts(POWTreeObsNode(tree, 1), rollouts)
     for t in range(0.0, stop=1.0, length=fpstep)
-        if s.t == 0.0 || t > 0.0
+        if s.t ≈ 0.0 || t > 0.0
             is = interp_state(s, sp, t)
             # fname = joinpath(surfdir, string(length(surfaces)+1)*".svg")
             # surf = CairoSVGSurface(fname, AutoViz.DEFAULT_CANVAS_WIDTH, AutoViz.DEFAULT_CANVAS_HEIGHT)

@@ -1,3 +1,4 @@
+# @everywhere using Roomba
 @everywhere using AA228FinalProject
 
 max_speed = 2.0
@@ -17,19 +18,24 @@ end
 pomdp = lidar_roomba_gen
 
 # Belief updater
-num_particles = 30000 # number of particles in belief
-v_noise_coeff = 0.3
-om_noise_coeff = 0.1
-belief_updater = (m)->RoombaParticleFilter(m, num_particles, v_noise_coeff, om_noise_coeff)
+@everywhere Base.convert(::Type{SVector{3,Float64}}, s::RoombaState) = SVector{3,Float64}(s.x, s.y, s.theta)
+let l = 40, w = 25, t = 24, ζ=0.001, η=0.005, v_noise_coeff=0.02, om_noise_coeff=0.01, grid = StateGrid(range(-25, stop=15, length=l+1)[2:end-1],
+                    range(-20, stop=5, length=w+1)[2:end-1],
+                    range(0, stop=2*pi, length=t+1)[2:end-1])
+    n_init = ceil(Int, KLDSampleSize(convert(Int, 11*l*w*t/20), ζ, η))
+    global belief_updater = (m)->RoombaParticleFilter(m, n_init, v_noise_coeff, om_noise_coeff, KLDResampler(grid, n_init, ζ, η))
+end
+# num_particles = 50000 # number of particles in belief
+# belief_updater = (m)->BasicParticleFilter(m, LidarResampler(num_particles, m, v_noise_coeff, om_noise_coeff), num_particles)
 
-grid = RectangleGrid(range(-25, stop=15, length=201),
-                   range(-20, stop=5, length=126),
-                   range(0, stop=2*pi, length=61),
-                   range(0, stop=1, length=2)) # Create the interpolating grid
-# grid = RectangleGrid(range(-25, stop=15, length=101),
-#                    range(-20, stop=5, length=51),
-#                    range(0, stop=2*pi, length=31),
-#                    range(0, stop=1, length=2)) # Create the interpolating grid
+# grid = RectangleGrid(range(-25, stop=15, length=201),
+#                    range(-20, stop=5, length=126),
+#                    range(0, stop=2*pi, length=61),
+#                    range(-1, stop=1, length=3)) # Create the interpolating grid
+grid = RectangleGrid(range(-25, stop=15, length=41),
+                   range(-20, stop=5, length=26),
+                   range(0, stop=2*pi, length=13),
+                   range(-1, stop=1, length=3)) # Create the interpolating grid
 interp = LocalGIFunctionApproximator(grid)  # Create the local function approximator using the grid
 
 approx_solver = LocalApproximationValueIterationSolver(interp,
@@ -60,29 +66,33 @@ end
 
 @everywhere function POMDPs.solve(s::LidarRoombaBoundsSolver, m::RoombaPOMDP)
     policy = solve(s.solver, m)
+    # LidarRoombaBounds(policy, Float64[], Roomba.mdp(m).time_pen * (1-discount(m)^19) / (1-discount(m)), discount(m)^20)
     LidarRoombaBounds(policy, Float64[], AA228FinalProject.mdp(m).time_pen * (1-discount(m)^19) / (1-discount(m)), discount(m)^20)
 end
 
 # For AdaOPS
-@everywhere Base.convert(::Type{SVector{3,Float64}}, s::RoombaState) = SVector{3,Float64}(s.x, s.y, s.theta)
-grid = StateGrid(range(-25, stop=15, length=9)[2:end-1],
-                range(-20, stop=5, length=6)[2:end-1],
-                range(0, stop=2*pi, length=5)[2:end-1])
+
+l = 8
+w = 5
+t = 4
+grid = StateGrid(range(-25, stop=15, length=l+1)[2:end-1],
+                    range(-20, stop=5, length=w+1)[2:end-1],
+                    range(0, stop=2*pi, length=t+1)[2:end-1])
 
 adaops_list = [
                 :bounds=>[LidarRoombaBoundsSolver(approx_solver)],
                 :delta=>[0.3],
                 :grid=>[grid],
-                :max_occupied_bins=>[(5*8-3*6)*4],
-                :m_min=>[10, 20, 30]
+                :max_occupied_bins=>[convert(Int, 11*l*w*t/20)],
+                :m_min=>[10, 30]
 		    ]
 
 adaops_list_labels = [
                     ["(DelayedMDP, MDP)"],
                     [0.3],
                     ["FullGrid"],
-                    [(5*8-3*6)*6],
-                    [10, 20, 30],
+                    [convert(Int, 11*l*w*t/20)],
+                    [10, 30],
 		    ]
 # # ARDESPOT
 @everywhere function ARDESPOT.bounds(bd::LidarRoombaBounds, pomdp::POMDP, b::ARDESPOT.ScenarioBelief)
@@ -123,18 +133,18 @@ pomcpow_list_labels = [["random",],
 
 # Solver list
 solver_list = [
-                AdaOPSSolver=>adaops_list, 
-                DESPOTSolver=>ardespot_list,
+                # AdaOPSSolver=>adaops_list, 
+                # DESPOTSolver=>ardespot_list,
                 POMCPOWSolver=>pomcpow_list,
                 ]
 solver_list_labels = [
-                    adaops_list_labels, 
-                    ardespot_list_labels,
+                    # adaops_list_labels, 
+                    # ardespot_list_labels,
                     pomcpow_list_labels,
                     ]
 solver_labels = [
-                "ADAOPS",
-                "ARDESPOT",
+                # "ADAOPS",
+                # "ARDESPOT",
                 "POMCPOW",
                 ]
 
@@ -150,7 +160,7 @@ parallel_experiment(pomdp,
                     domain_queue_length=1,
                     solver_labels=solver_labels,
                     solver_list_labels=solver_list_labels,
-                    max_queue_length=10,
+                    max_queue_length=100,
                     belief_updater=belief_updater,
                     experiment_label="Roomba3_334",
                     full_factorial_design=true)
