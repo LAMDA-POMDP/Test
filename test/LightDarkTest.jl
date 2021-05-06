@@ -5,21 +5,43 @@
 
 pomdp = LightDark1D()
 
+POMDPs.actionindex(m::LightDark1D, a::Int) = a + 2
+
+interp = LocalGIFunctionApproximator(RectangleGrid(range(-1, stop=1, length=3), range(-100, stop=100, length=401)))
+                     
+approx_mdp = solve(LocalApproximationValueIterationSolver(
+                                interp,
+                                verbose=true,
+                                max_iterations=1000,
+                                is_mdp_generative=true,
+                                n_generative_samples=1000),
+                            pomdp)
+
+approx_random = solve(LocalApproximationRandomSolver(
+                                interp,
+                                verbose=true,
+                                max_iterations=1000,
+                                is_mdp_generative=true,
+                                n_generative_samples=1000),
+                            pomdp)
+
+
 random = solve(RandomSolver(), pomdp)
 
 # For AdaOPS
 @everywhere Base.convert(::Type{SVector{1,Float64}}, s::LightDark1DState) = SVector{1,Float64}(s.y)
 grid = StateGrid(range(-10, stop=15, length=26))
-bounds = AdaOPS.IndependentBounds(FORollout(random), pomdp.correct_r, check_terminal=true)
+bounds = AdaOPS.IndependentBounds(FOValue(approx_random), FOValue(approx_mdp), check_terminal=true)
+fixed_bounds = AdaOPS.IndependentBounds(FORollout(random), pomdp.correct_r, check_terminal=true)
 adaops_list = [
-                :bounds=>[bounds],
+                :bounds=>[bounds, fixed_bounds],
                 :delta=>[1.0],
                 :m_min=>[10, 30],
                 :grid=>[grid],
 		    ]
 
 adaops_list_labels = [
-                ["Random, $(pomdp.correct_r)"],
+                ["Random, MDP", "Random, $(pomdp.correct_r)"],
                 [1.0],
                 [10, 30],
                 ["FullGrid"],

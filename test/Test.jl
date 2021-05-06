@@ -27,8 +27,10 @@ cd("results")
     using BasicPOMCP
     using POMCPOW
     using QMDP
+    using FIB
     using DiscreteValueIteration
     using LocalApproximationValueIteration
+    using LocalApproximationRandomStrategy
 
     using SparseArrays
     using LinearAlgebra
@@ -82,7 +84,7 @@ end
     end
 end
 
-# init_param for different solvers
+# init_param for AdaOPS
 
 @everywhere function ParallelExperiment.init_param(m, bounds::AdaOPS.IndependentBounds)
     lower = init_param(m, bounds.lower)
@@ -122,10 +124,12 @@ end
     FOValue(policy)
 end
 
+# init_param for BSDESPOT
+
 @everywhere function ParallelExperiment.init_param(m, bounds::BSDESPOT.IndependentBounds)
     lower = init_param(m, bounds.lower)
     upper_policy = init_param(m, bounds.upper)
-    if typeof(upper_policy) <: AlphaVectorPolicy
+    if typeof(upper_policy) <: Policy
         upper = (p, b)->value(upper_policy, b)
     else
         upper = upper_policy
@@ -138,10 +142,12 @@ end
     BSDESPOT.FullyObservableValueUB(policy)
 end
 
+# init_param for ARDESPOT
+
 @everywhere function ParallelExperiment.init_param(m, bounds::ARDESPOT.IndependentBounds)
     lower = init_param(m, bounds.lower)
     upper_policy = init_param(m, bounds.upper)
-    if typeof(upper_policy) <: AlphaVectorPolicy
+    if typeof(upper_policy) <: Policy
         upper = (p, b)->value(upper_policy, b)
     else
         upper = upper_policy
@@ -166,11 +172,11 @@ end
     max(zeta, 1 - (0.2*k + 0.2*(1-d)))
 end
 
-include("LidarRoombaTest.jl")
+# include("LidarRoombaTest.jl")
 # include("BumperRoombaTest.jl")
 # include("RSTest.jl")
 # include("LTTest.jl")
-# include("LightDarkTest.jl")
+include("LightDarkTest.jl")
 
 # Not ready yet:
 # include("VDPTagTest.jl")

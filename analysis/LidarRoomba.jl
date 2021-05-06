@@ -122,7 +122,7 @@ grid = StateGrid(range(-25, stop=15, length=l+1)[2:end-1],
 
 random_policy = RandomPolicy(m)
 
-mdp = solve(approx_solver, m)
+# mdp = solve(approx_solver, m)
 bounds = LidarRoombaBounds(mdp, Float64[], AA228FinalProject.mdp(m).time_pen * (1-discount(m)^19) / (1-discount(m)), discount(m)^20)
 b0 = initialstate(m)
 s0 = rand(b0)

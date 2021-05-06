@@ -55,7 +55,7 @@ om_noise_coeff = 0.1
 belief_updater = (m)->RoombaParticleFilter(m, num_particles, v_noise_coeff, om_noise_coeff)
 
 struct BumperRoombaBounds{M}
-    fib::AlphaVectorPolicy
+    qmdp::AlphaVectorPolicy
     blind::AlphaVectorPolicy
     m::M
     states::Vector{Int}
@@ -66,27 +66,35 @@ function AdaOPS.bounds!(L::Vector{Float64}, U::Vector{Float64}, bd::BumperRoomba
     for (i, s) in enumerate(particles(b))
         bd.states[i] = convert_s(Int, s, bd.m)
     end
-    n_states = AA228FinalProject.n_states(bd.m)
     @inbounds for i in eachindex(W)
-        # belief_vec = sparsevec(bd.states, W[i]/sum(W[i]), n_states)
         belief = WeightedParticleBelief(bd.states, W[i])
-        U[i] = value(bd.fib, belief)
+        U[i] = value(bd.qmdp, belief)
         L[i] = value(bd.blind, belief)
     end
     return L, U
 end
 
-struct BumperRoombaBoundsSolver <: Solver end
+function ARDESPOT.bounds(bd::BumperRoombaBounds, pomdp::RoombaPOMDP, b::ARDESPOT.ScenarioBelief)
+    resize!(bd.states, n_particles(b))
+    for (i, s) in enumerate(particles(b))
+        bd.states[i] = convert_s(Int, s, bd.m)
+    end
+    belief = ParticleCollection(bd.states)
+    return value(bd.blind, belief), value(bd.qmdp, belief)
+end
+
+struct BumperRoombaBoundsSolver <: Solver
+    verbose::Bool
+end
+BumperRoombaBoundsSolver() = BumperRoombaBoundsSolver(false)
 
 function POMDPs.solve(s::BumperRoombaBoundsSolver, m::BumperPOMDP)
     mdp = AA228FinalProject.mdp(m)
     discrete_m = RoombaPOMDP(sensor=m.sensor, mdp=RoombaMDP(config=mdp.config, aspace=mdp.aspace, v_max=mdp.v_max, sspace=DiscreteRoombaStateSpace(41, 26, 20)))
-    fib = solve(FIBSolver(), discrete_m)
-    blind = solve(BlindPolicySolver(), discrete_m)
-    BumperRoombaBounds(fib, blind, discrete_m, Int[])
+    qmdp = solve(QMDPSolver(verbose=s.verbose), discrete_m)
+    blind = solve(BlindPolicySolver(verbose=s.verbose), discrete_m)
+    BumperRoombaBounds(qmdp, blind, discrete_m, Int[])
 end
-
-# bounds = solve(BumperRoombaBoundsSolver(), m)
 
 # For AdaOPS
 Base.convert(::Type{SVector{3,Float64}}, s::RoombaState) = SVector{3,Float64}(s.x, s.y, s.theta)
@@ -96,13 +104,14 @@ grid = StateGrid(range(-25, stop=15, length=9)[2:end-1],
 
 b0 = initialstate(m)
 s0 = rand(b0)
+# bounds = solve(BumperRoombaBoundsSolver(true), m)
 solver = AdaOPSSolver(bounds=bounds,
                         grid=grid,
                         delta=0.0,
-                        m_max=200,
+                        m_min=30,
                         max_occupied_bins=(5*8-3*6)*4,
-                        tree_in_info=false,
-                        num_b=100_000
+                        tree_in_info=true,
+                        num_b=100_000,
                         )
 adaops = solve(solver, m)
 @time action(adaops, b0)
