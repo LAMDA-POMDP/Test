@@ -15,42 +15,47 @@
     end
 end
 move_towards_policy = FunctionPolicy(b->move_towards(nothing, b))
+blind = BlindPolicySolver(max_iterations=1000)
 qmdp = QMDPSolver(max_iterations=1000)
 mdp = ValueIterationSolver(max_iterations=1000, include_Q=false)
 @everywhere POMDPs.action(p::AlphaVectorPolicy, s::LTState) = action(p, ParticleCollection([s]))
+@everywhere POMDPs.value(p::AlphaVectorPolicy, s::LTState) = action(p, ParticleCollection([s]))
 
 # For AdaOPS
 @everywhere Base.convert(::Type{SVector{2, Float64}}, s::LTState) = SVector{2,Float64}(s.opponent)
 grid = StateGrid([2:7;], [2:11;])
-pu_bounds = AdaOPS.IndependentBounds(-20.0, POValue(qmdp), check_terminal=true, consistency_fix_thresh=1e-5)
+ada_blpu_bounds = AdaOPS.IndependentBounds(POValue(blind), POValue(qmdp), check_terminal=true, consistency_fix_thresh=1e-5)
 
 adaops_list = [
-            :bounds=>[pu_bounds],
-            :delta=>[0.1],
+            :bounds=>[ada_blpu_bounds],
+            :delta=>[0.1, 0.3, 1.0],
             :grid=>[grid],
-            :m_min=>[10, 30],
+            :m_min=>[10, 30, 100],
             :bounds_warnings=>[true],
             ]
 adaops_list_labels = [
-                    ["-20, QMDP"],
-                    [0.1],
+                    ["(Blind, QMDP)"],
+                    [0.1, 0.3, 1.0],
                     ["FullGrid"],
-                    [10, 30],
+                    [10, 30, 100],
                     [true],
                     ]
 
-#= For ARDESPOT
-flfu_bounds = ARDESPOT.IndependentBounds(ARDESPOT.DefaultPolicyLB(move_towards_policy), ARDESPOT.FullyObservableValueUB(mdp), check_terminal=true, consistency_fix_thresh=1e-5)
-plfu_bounds = ARDESPOT.IndependentBounds(ARDESPOT.DefaultPolicyLB(qmdp), ARDESPOT.FullyObservableValueUB(mdp), check_terminal=true, consistency_fix_thresh=1e-5)
+# For ARDESPOT
+blpu_bounds = ARDESPOT.IndependentBounds(ARDESPOT.DefaultPolicyLB(blind), ARDESPOT.FullyObservableValueUB(qmdp), check_terminal=true, consistency_fix_thresh=1e-5)
 
-ardespot_list = [:default_action=>[move_towards_policy,], 
-                    :bounds=>[flfu_bounds, plfu_bounds],
-                    :K=>[100],
+ardespot_list = [
+                    :default_action=>[move_towards_policy,], 
+                    :bounds=>[blpu_bounds],
+                    :K=>[30, 100, 300],
+                    :lambda=>[0.0, 0.001, 0.01, 0.1],
                     :bounds_warnings=>[false],
                 ]
-ardespot_list_labels = [["MoveTowards",], 
-                        ["(MoveTowards, MDP)", "(QMDPRollout, MDP)"],
-                        [100],
+ardespot_list_labels = [
+                        ["MoveTowards",], 
+                        ["(Blind, QMDP)"],
+                        [30, 100, 300],
+                        [0.0, 0.001, 0.01, 0.1],
                         [false],
                         ]
 
@@ -61,13 +66,13 @@ pomcpow_list = [:estimate_value=>[value_estimator],
                     :max_time=>[1.0,],
                     :max_depth=>[90],
                     :criterion=>[MaxUCB(26.0),],
-                    :final_criterion=[MaxTries()],
+                    :final_criterion=>[MaxTries()],
                     :enable_action_pw=>[false],
-                    :check_repeat_obs=[false,],
+                    :check_repeat_obs=>[false,],
                     :k_observation=>[4.,],
-                    :alpha_observation=>[1/35,]
-                    :tree_in_info=[false],
-                    :default_action=[move_towards_policy],
+                    :alpha_observation=>[1/35,],
+                    :tree_in_info=>[false],
+                    :default_action=>[move_towards_policy],
                     ]
 pomcpow_list_labels = [["MDP"],
                     [150000,],
@@ -83,7 +88,6 @@ pomcpow_list_labels = [["MDP"],
                     ["MoveTowards"],
                     ]
 
-=#
 # Solver list
 solver_list = [
                 #DESPOTSolver=>ardespot_list,
@@ -97,16 +101,12 @@ solver_list_labels = [
                     #ardespot_list_labels,
                     adaops_list_labels,
                     #pomcpow_list_labels,
-                    # [[1000,]],
-                    # [["MoveTowards",]],
                     ]
 
 solver_labels = [
                 #"ARDESPOT",
                 "AdaOPS",
                 #"POMCPOW",
-                # "QMDP",
-                # "MoveTowards",
                 ]
 
 episodes_per_domain = 10
@@ -120,6 +120,6 @@ parallel_experiment(gen_lasertag,
                     solver_labels=solver_labels,
                     solver_list_labels=solver_list_labels,
                     belief_updater=(m)->BasicParticleFilter(m, LowVarianceResampler(30000), 30000),
-                    max_queue_length=100,
+                    max_queue_length=18,
                     experiment_label="LT100_10",
                     full_factorial_design=true) 

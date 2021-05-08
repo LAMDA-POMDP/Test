@@ -1,5 +1,5 @@
 # global variables
-max_workers = 4
+max_workers = 6
 
 # set up parallel environment
 using Pkg
@@ -156,7 +156,13 @@ end
 end
 
 @everywhere function ParallelExperiment.init_param(m, bound::ARDESPOT.FullyObservableValueUB)
-    policy = typeof(bound.p) <: Solver ? solve(bound.p, UnderlyingMDP(m)) : bound.p
+    if typeof(bound.p) <: QMDPSolver
+        policy = solve(bound.p, m)
+    elseif typeof(bound.p) <: Solver
+        policy = solve(bound.p, UnderlyingMDP(m))
+    else
+        policy = bound.p
+    end
     ARDESPOT.FullyObservableValueUB(policy)
 end
 
@@ -175,8 +181,8 @@ end
 # include("LidarRoombaTest.jl")
 # include("BumperRoombaTest.jl")
 # include("RSTest.jl")
-# include("LTTest.jl")
-include("LightDarkTest.jl")
+include("LTTest.jl")
+# include("LightDarkTest.jl")
 
 # Not ready yet:
 # include("VDPTagTest.jl")
