@@ -27,7 +27,7 @@ using CSV
 using GridInterpolations
 using LocalFunctionApproximation
 using ProfileView
-using AA228FinalProject
+using RoombaPOMDPs
 using Printf
 using LinearAlgebra
 using SparseArrays
@@ -89,7 +89,7 @@ end
 BumperRoombaBoundsSolver() = BumperRoombaBoundsSolver(false)
 
 function POMDPs.solve(s::BumperRoombaBoundsSolver, m::BumperPOMDP)
-    mdp = AA228FinalProject.mdp(m)
+    mdp = RoombaPOMDPs.mdp(m)
     discrete_m = RoombaPOMDP(sensor=m.sensor, mdp=RoombaMDP(config=mdp.config, aspace=mdp.aspace, v_max=mdp.v_max, sspace=DiscreteRoombaStateSpace(41, 26, 20)))
     qmdp = solve(QMDPSolver(verbose=s.verbose), discrete_m)
     blind = solve(BlindPolicySolver(verbose=s.verbose), discrete_m)
