@@ -21,7 +21,7 @@ const MAX_SAMPLE_SIZE = 10000
 
 EffectiveSampleSize(b::WeightedParticleBelief) = b.weight_sum^2 / dot(b.weights, b.weights)
 
-TVDistance(b1::DiscreteBelief, b2::AbstractParticleBelief) = sum(abs(pdf(b1,s)-pdf(b2,s)) for s in b1.state_list) / 2.0
+TVDistance(b1::DiscreteBelief, b2::AbstractParticleBelief) = weight_sum(b2) == 0.0 ? 1.0 : sum(abs(pdf(b1,s)-pdf(b2,s)) for s in b1.state_list) / 2.0
 
 mutable struct AdaptiveParticleFilter{N,PM,RM,RS,RNG<:AbstractRNG} <: Updater
     predict_model::PM
@@ -57,7 +57,8 @@ function ParticleFilters.update(up::AdaptiveParticleFilter{N}, b::WeightedPartic
     if w_sum == 0.0
         error("All particles in the collection are impossible")
     end
-    if n_particles(b) / EffectiveSampleSize(b) > up.Deff_thres
+    n = n_particles(b)
+    if n / EffectiveSampleSize(b) > up.Deff_thres
         RS = typeof(up.resampler)
         if N !== 0
             k = 0
@@ -72,9 +73,7 @@ function ParticleFilters.update(up::AdaptiveParticleFilter{N}, b::WeightedPartic
                         up.predict_model,
                         up.reweight_model,
                         b, a, o,
-                        up.rng)), fill!(weights(b), 1.0), n)
-    else
-        n = n_particles(b)
+                        up.rng)), fill!(resize!(weights(b), n), 1.0), n)
     end
     resize!(pm, n)
     resize!(wm, n)
@@ -192,8 +191,8 @@ Base.convert(::Type{SVector{4, Float64}}, s::LTState) = SVector{4,Float64}(s.rob
 grid = StateGrid(2:n_row, 2:n_col, 2:n_row, 2:n_col)
 resampler = (n)->LowVarianceResampler(n)
 
-num_of_episodes = 1
-rounds_per_episode = 500
+num_of_trajectories = 1
+rounds_per_trajectory = 500
 max_step = 10
 verbose = false
 
@@ -228,8 +227,8 @@ sis_tvd = Float64[]
 ada_particle_num = Float64[]
 ada_tvd = Float64[]
 hist = []
-for i in 1:num_of_episodes
-    println("$(i)-th episode")
+for i in 1:num_of_trajectories
+    println("$(i)-th trajectory")
     s = rand(b0)
     global hist = []
     b_truth = initialize_belief(ground_truth_filter, b0)
@@ -258,11 +257,9 @@ for i in 1:num_of_episodes
             end
             dist = TVDistance(b_truth, b_sir)
         catch ex
-            @show ex
-            continue
-        end
-        if isnan(dist)
-            @warn("Total variation distance is not a number")
+            if verbose
+                println(ex)
+            end
             dist = 1.0
         end
         push!(sir_particle_num, num_of_particles)
@@ -287,11 +284,9 @@ for i in 1:num_of_episodes
             end
             dist = TVDistance(b_truth, b_sis)
         catch ex
-            @show ex
-            continue
-        end
-        if isnan(dist)
-            @warn("Total variation distance is not a number")
+            if verbose
+                println(ex)
+            end
             dist = 1.0
         end
         push!(sis_particle_num, num_of_particles)
@@ -308,24 +303,22 @@ for i in 1:num_of_episodes
         end
         dist = Beta(1, 1.6)
         zeta = 10^(-0.3+1.9*rand(rng, dist))
-        ada_filter = AdaptiveParticleFilter(m, resampler(1000), 10, Deff_thres=1.6, zeta=zeta, grid=grid, rng=rng)
+        ada_filter = AdaptiveParticleFilter(m, resampler(1000), 10, Deff_thres=2.0, zeta=zeta, grid=grid, rng=rng)
         b_ada = initialize_belief(ada_filter, b0)
         step = 0
         dist = 0.0
         num_of_particles = 0
         try
             for (a, o) in hist
-                step += 1
                 b_ada = update(ada_filter, b_ada, a, o)
                 num_of_particles += n_particles(b_ada)
+                step += 1
             end
             dist = TVDistance(b_truth, b_ada)
         catch ex
-            @show ex
-            continue
-        end
-        if isnan(dist)
-            @warn("Total variation distance is not a number")
+            if verbose
+                println(ex)
+            end
             dist = 1.0
         end
         push!(ada_particle_num, num_of_particles/step)
