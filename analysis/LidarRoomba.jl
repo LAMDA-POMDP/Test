@@ -26,9 +26,12 @@ using CSV
 using GridInterpolations
 using LocalFunctionApproximation
 using ProfileView
-using AA228FinalProject
+using RoombaPOMDPs
 using Printf
 using LinearAlgebra
+using Plots
+theme(:mute)
+pyplot()
 
 function ParticleFilters.unnormalized_util(p::AlphaVectorPolicy, b::AbstractParticleBelief)
     util = zeros(length(alphavectors(p)))
@@ -122,8 +125,8 @@ grid = StateGrid(range(-25, stop=15, length=l+1)[2:end-1],
 
 random_policy = RandomPolicy(m)
 
-# mdp = solve(approx_solver, m)
-bounds = LidarRoombaBounds(mdp, Float64[], AA228FinalProject.mdp(m).time_pen * (1-discount(m)^19) / (1-discount(m)), discount(m)^20)
+mdp = solve(approx_solver, m)
+bounds = LidarRoombaBounds(mdp, Float64[], RoombaPOMDPs.mdp(m).time_pen * (1-discount(m)^19) / (1-discount(m)), discount(m)^20)
 b0 = initialstate(m)
 s0 = rand(b0)
 solver = AdaOPSSolver(bounds=bounds,

@@ -28,6 +28,8 @@ using RockSample
 using Statistics
 using Combinatorics
 using ProfileView
+theme(:mute)
+pyplot()
 
 function ParticleFilters.unnormalized_util(p::AlphaVectorPolicy, b::AbstractParticleBelief)
     util = zeros(length(alphavectors(p)))
@@ -54,8 +56,8 @@ adaops_solver = AdaOPSSolver(bounds=bounds,
                         delta=0.1,
                         m_min=30,
                         bounds_warnings=true,
-                        # tree_in_info=true,
-                        # default_action=rs_exit 
+                        tree_in_info=true,
+                        default_action=rs_exit 
                         )
 lower = (pomdp, b)->value(rs_exit, b)
 # upper = (pomdp, b)->value(qmdp, b)
@@ -78,7 +80,14 @@ D = info[:tree]
 @show std(D.Delta)
 @show quantile(D.Delta, [0.1,0.9])
 # @profview action(despot, b0)
-@profview action(adaops, b0)
+# @profview action(adaops, b0)
+
+num_particles = 30000
+belief_updater = (m)->BasicParticleFilter(m, LowVarianceResampler(num_particles), num_particles)
+
+hist = simulate(HistoryRecorder(max_steps=100), m, adaops, belief_updater(m), b0, s0)
+hist_analysis(hist)
+@show undiscounted_reward(hist)
 
 # num_particles = 30000
 # belief_updater = (m)->BasicParticleFilter(m, LowVarianceResampler(num_particles), num_particles)

@@ -27,10 +27,12 @@ using CSV
 using GridInterpolations
 using LocalFunctionApproximation
 using ProfileView
-using AA228FinalProject
+using RoombaPOMDPs
 using Printf
 using LinearAlgebra
 using SparseArrays
+theme(:mute)
+pyplot()
 
 function ParticleFilters.unnormalized_util(p::AlphaVectorPolicy, b::AbstractParticleBelief)
     util = zeros(length(alphavectors(p)))
@@ -89,7 +91,7 @@ end
 BumperRoombaBoundsSolver() = BumperRoombaBoundsSolver(false)
 
 function POMDPs.solve(s::BumperRoombaBoundsSolver, m::BumperPOMDP)
-    mdp = AA228FinalProject.mdp(m)
+    mdp = RoombaPOMDPs.mdp(m)
     discrete_m = RoombaPOMDP(sensor=m.sensor, mdp=RoombaMDP(config=mdp.config, aspace=mdp.aspace, v_max=mdp.v_max, sspace=DiscreteRoombaStateSpace(41, 26, 20)))
     qmdp = solve(QMDPSolver(verbose=s.verbose), discrete_m)
     blind = solve(BlindPolicySolver(verbose=s.verbose), discrete_m)
@@ -104,7 +106,7 @@ grid = StateGrid(range(-25, stop=15, length=9)[2:end-1],
 
 b0 = initialstate(m)
 s0 = rand(b0)
-# bounds = solve(BumperRoombaBoundsSolver(true), m)
+bounds = solve(BumperRoombaBoundsSolver(true), m)
 solver = AdaOPSSolver(bounds=bounds,
                         grid=grid,
                         delta=0.0,

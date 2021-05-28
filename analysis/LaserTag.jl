@@ -26,6 +26,9 @@ using CSV
 using GridInterpolations
 using ProfileView
 using LaserTag
+using Plots
+theme(:mute)
+pyplot()
 
 function move_towards(pomdp, b)
     s = typeof(b) <: LTState ? b : rand(b)

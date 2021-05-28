@@ -1,5 +1,4 @@
 [deps]
-AA228FinalProject = "fe2df5ea-4d44-4e5a-a895-9dbc87b19b37"
 ARDESPOT = "d96c9ae4-3372-47d5-8a88-316ae77be8cf"
 AdaOPS = "eadfb9d8-44f1-454c-a5eb-0663ee7d74a1"
 BSDESPOT = "e87855f3-d877-40b7-8600-5f1cc2d263ad"
@@ -52,6 +51,7 @@ RLInterface = "3065fe53-3878-5aed-aae7-ab641be43734"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 RockSample = "de008ff0-c357-11e8-3329-7fe746fe836e"
 Roomba = "27451d18-47cd-4e6c-a8d6-4c3b695fab9f"
+RoombaPOMDPs = "fe2df5ea-4d44-4e5a-a895-9dbc87b19b37"
 SARSOP = "cef570c6-3a94-5604-96b7-1a5e143043f2"
 ScikitLearn = "3646fa90-6ef7-5e7e-9f22-8aca16db6324"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"

@@ -156,7 +156,7 @@ end
 end
 
 @everywhere function ParallelExperiment.init_param(m, bound::ARDESPOT.FullyObservableValueUB)
-    if typeof(bound.p) <: QMDPSolver
+    if typeof(bound.p) <: QMDPSolver || typeof(bound.p) <: RSQMDPSolver
         policy = solve(bound.p, m)
     elseif typeof(bound.p) <: Solver
         policy = solve(bound.p, UnderlyingMDP(m))
@@ -181,8 +181,8 @@ end
 # include("LidarRoombaTest.jl")
 # include("BumperRoombaTest.jl")
 # include("RSTest.jl")
-include("LTTest.jl")
-# include("LightDarkTest.jl")
+# include("LTTest.jl")
+include("LightDarkTest.jl")
 
 # Not ready yet:
 # include("VDPTagTest.jl")

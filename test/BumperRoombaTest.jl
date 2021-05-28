@@ -1,4 +1,4 @@
-@everywhere using AA228FinalProject
+@everywhere using RoombaPOMDPs
 
 max_speed = 5.0
 speed_interval = 2.0
@@ -80,7 +80,7 @@ end
 BumperRoombaBoundsSolver() = BumperRoombaBoundsSolver(false)
 
 @everywhere function POMDPs.solve(s::BumperRoombaBoundsSolver, m::BumperPOMDP)
-    mdp = AA228FinalProject.mdp(m)
+    mdp = RoombaPOMDPs.mdp(m)
     discrete_m = RoombaPOMDP(sensor=m.sensor, mdp=RoombaMDP(config=mdp.config, aspace=mdp.aspace, v_max=mdp.v_max, sspace=DiscreteRoombaStateSpace(41, 26, 20)))
     qmdp = solve(QMDPSolver(verbose=s.verbose), discrete_m)
     blind = solve(BlindPolicySolver(verbose=s.verbose), discrete_m)
@@ -134,46 +134,46 @@ pomcpow_list = [
                 :estimate_value=>[mdp_estimator],
                 :tree_queries=>[100000,], 
                 :max_time=>[1.0,], 
-                :k_observation=>[1.0, 2.0],
-                :alpha_observation=>[1.0, 1/300],
-                :criterion=>[MaxUCB(100.)]]
+                :k_observation=>[1.0],
+                :alpha_observation=>[1.0],
+                :criterion=>[MaxUCB(1.), MaxUCB(10.), MaxUCB(100.), MaxUCB(1000.)]]
 pomcpow_list_labels = [
                         ["MDPValue"],
                         [100000,], 
                         [1.0,], 
-                        [1.0, 2.0],
-                        [1.0, 1/300],
-                        ["UCB 100"]]
+                        [1.0,],
+                        [1.0,],
+                        ["UCB 1","UCB 10","UCB 100","UCB 1000"]]
 
 # Solver list
 solver_list = [
-                AdaOPSSolver=>adaops_list, 
-                DESPOTSolver=>ardespot_list,
-                # POMCPOWSolver=>pomcpow_list,
+                #AdaOPSSolver=>adaops_list, 
+                #DESPOTSolver=>ardespot_list,
+                POMCPOWSolver=>pomcpow_list,
                 ]
 solver_list_labels = [
-                    adaops_list_labels, 
-                    ardespot_list_labels,
-                    # pomcpow_list_labels,
+                    #adaops_list_labels, 
+                    #ardespot_list_labels,
+                    pomcpow_list_labels,
                     ]
 solver_labels = [
-                "ADAOPS",
-                "ARDESPOT",
-                # "POMCPOW",
+                #"ADAOPS",
+                #"ARDESPOT",
+                "POMCPOW",
                 ]
 
                 
-episodes_per_domain = 334
+episodes_per_domain = 250
 max_steps = 100
 
 parallel_experiment(pomdp,
                     episodes_per_domain,
                     max_steps,
                     solver_list,
-                    num_of_domains=2,
+                    num_of_domains=4,
                     solver_labels=solver_labels,
                     solver_list_labels=solver_list_labels,
-                    max_queue_length=300,
+                    max_queue_length=100,
                     belief_updater=belief_updater,
-                    experiment_label="BumperRoomba3_334",
+                    experiment_label="BumperRoomba4_250",
                     full_factorial_design=true)

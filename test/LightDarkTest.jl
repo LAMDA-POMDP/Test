@@ -33,72 +33,74 @@ random = solve(RandomSolver(), pomdp)
 grid = StateGrid(range(-10, stop=15, length=26))
 bounds = AdaOPS.IndependentBounds(FOValue(approx_random), FOValue(approx_mdp), check_terminal=true)
 fixed_bounds = AdaOPS.IndependentBounds(FORollout(random), pomdp.correct_r, check_terminal=true)
+#
 adaops_list = [
-                :bounds=>[bounds, fixed_bounds],
-                :delta=>[1.0],
-                :m_min=>[10, 30],
+                :bounds=>[bounds],
+                :delta=>[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+                :m_min=>[10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
                 :grid=>[grid],
 		    ]
 
 adaops_list_labels = [
-                ["Random, MDP", "Random, $(pomdp.correct_r)"],
-                [1.0],
-                [10, 30],
+                ["Random, MDP",],
+                [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+                [10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
                 ["FullGrid"],
 		    ]
+
 # ARDESPOT
 bounds = ARDESPOT.IndependentBounds(ARDESPOT.DefaultPolicyLB(random), pomdp.correct_r, check_terminal=true)
 ardespot_list = [
                 :default_action=>[random],
                 :bounds=>[bounds],
-                :lambda=>[0.0],
-                :K=>[100],
+                :lambda=>[0.1],
+                :K=>[30],
                 :bounds_warnings=>[false,],
                 ]
 ardespot_list_labels = [
                 ["Random"],
                 ["(Random, $(pomdp.correct_r))",],
-                [0.0],
-                [100],
+                [0.1],
+                [30],
                 [false],
                 ]
 
 # For POMCPOW
 pomcpow_list = [
-                :estimate_value=>[FORollout(random)],
+                :estimate_value=>[FOValue(approx_mdp)],
                 :tree_queries=>[100000,], 
                 :max_time=>[1.0,], 
-                :criterion=>[MaxUCB(30.0), MaxUCB(15.0), MaxUCB(45.0)],
+                :criterion=>[MaxUCB(10.0),],
                 :max_depth=>[20],
-                :k_observation=>[1.0],
-                :alpha_observation=>[1/15.0, 1/45]
+                :k_observation=>[4.0],
+                :alpha_observation=>[0.03],
                 ]
 
 pomcpow_list_labels = [
-                        ["Random"],
+                        ["MDP"],
                         [100000,], 
                         [1.0,], 
-                        ["UCB 30", "UCB 15", "UCB 45"],
+                        ["UCB 10",],
                         [20],
-                        [1.0],
-                        [1/15.0, 1/45]
+                        [4.0],
+                        [0.03]
                         ]
 
 # Solver list
 solver_list = [
                 AdaOPSSolver=>adaops_list, 
-                # DESPOTSolver=>ardespot_list,
-                # POMCPOWSolver=>pomcpow_list,
+                #DESPOTSolver=>ardespot_list,
+                #POMCPOWSolver=>pomcpow_list,
                 ]
 solver_list_labels = [
-                    adaops_list_labels, 
-                    # ardespot_list_labels,
-                    # pomcpow_list_labels,
+                    adaops_list_labels,
+                    #ardespot_list_labels,
+                    #pomcpow_list_labels,
                     ]
 solver_labels = [
                 "ADAOPS",
-                # "ARDESPOT",
-                # "POMCPOW",
+                #"ARDESPOT",
+                #"POMCPOW",
                 ]
 
                 
@@ -114,5 +116,5 @@ parallel_experiment(pomdp,
                     solver_list_labels=solver_list_labels,
                     max_queue_length=100,
                     belief_updater=(m)->BasicParticleFilter(m, LowVarianceResampler(30000), 30000),
-                    experiment_label="LightDark",
+                    experiment_label="LightDark_4",
                     full_factorial_design=true)
