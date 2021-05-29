@@ -1,11 +1,5 @@
 # This file is machine-generated - editing it directly is not advised
 
-[[AEMS]]
-deps = ["BeliefUpdaters", "D3Trees", "FIB", "POMDPModelTools", "POMDPPolicies", "POMDPSimulators", "POMDPTesting", "POMDPs", "Printf"]
-git-tree-sha1 = "d0ededa940b0523b301ffa0107b9255dcf7edb45"
-uuid = "3b430cce-3194-5812-b203-bf9e73c3e836"
-version = "0.1.1"
-
 [[ARDESPOT]]
 deps = ["BasicPOMCP", "BeliefUpdaters", "CPUTime", "D3Trees", "POMDPModelTools", "POMDPs", "Parameters", "ParticleFilters", "Printf", "Random"]
 git-tree-sha1 = "613505fd83769274be2ac059dec46cc69835194b"
@@ -31,7 +25,7 @@ version = "0.3.4"
 
 [[AdaOPS]]
 deps = ["BasicPOMCP", "BeliefUpdaters", "CPUTime", "D3Trees", "Distances", "Distributions", "LinearAlgebra", "MCTS", "POMDPLinter", "POMDPModelTools", "POMDPSimulators", "POMDPs", "Parameters", "ParticleFilters", "Plots", "Printf", "Random", "StaticArrays", "Statistics"]
-git-tree-sha1 = "129dffa1cb41e5633cbe066eb04162e6466620f1"
+git-tree-sha1 = "f5fedf4abbe3430aaf37766b3a889ba561821fbd"
 repo-rev = "main"
 repo-url = "https://github.com/LAMDA-POMDP/AdaOPS.jl"
 uuid = "eadfb9d8-44f1-454c-a5eb-0663ee7d74a1"
@@ -167,10 +161,10 @@ uuid = "a74b3585-a348-5f62-a45c-50e91977d574"
 version = "0.7.0"
 
 [[Blosc_jll]]
-deps = ["Libdl", "Lz4_jll", "Pkg", "Zlib_jll", "Zstd_jll"]
-git-tree-sha1 = "aa9ef39b54a168c3df1b2911e7797e4feee50fbe"
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Lz4_jll", "Pkg", "Zlib_jll", "Zstd_jll"]
+git-tree-sha1 = "e747dac84f39c62aff6956651ec359686490134e"
 uuid = "0b7ba130-8d10-5ba8-a3d6-c5182647fed9"
-version = "1.14.3+1"
+version = "1.21.0+0"
 
 [[Bzip2_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -232,15 +226,15 @@ version = "0.9.7"
 
 [[ChainRules]]
 deps = ["ChainRulesCore", "Compat", "LinearAlgebra", "Random", "Reexport", "Requires", "Statistics"]
-git-tree-sha1 = "3f1d9907dc8559cc7d568c5dd6eb1b583ac00aec"
+git-tree-sha1 = "422db294d817de46668a3bf119175080ab093b23"
 uuid = "082447d4-558c-5d27-93f4-14fc19e9eca2"
-version = "0.7.65"
+version = "0.7.70"
 
 [[ChainRulesCore]]
 deps = ["Compat", "LinearAlgebra", "SparseArrays"]
-git-tree-sha1 = "b391f22252b8754f4440de1f37ece49d8a7314bb"
+git-tree-sha1 = "4b28f88cecf5d9a07c85b9ce5209a361ecaff34a"
 uuid = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
-version = "0.9.44"
+version = "0.9.45"
 
 [[Clp]]
 deps = ["BinaryProvider", "CEnum", "Clp_jll", "Libdl", "MathOptInterface", "SparseArrays"]
@@ -643,15 +637,15 @@ version = "0.11.5"
 
 [[GR]]
 deps = ["Base64", "DelimitedFiles", "GR_jll", "HTTP", "JSON", "Libdl", "LinearAlgebra", "Pkg", "Printf", "Random", "Serialization", "Sockets", "Test", "UUIDs"]
-git-tree-sha1 = "011458b83178ac913dc4eb73b229af45bdde5d83"
+git-tree-sha1 = "b83e3125048a9c3158cbb7ca423790c7b1b57bea"
 uuid = "28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71"
-version = "0.57.4"
+version = "0.57.5"
 
 [[GR_jll]]
 deps = ["Artifacts", "Bzip2_jll", "Cairo_jll", "FFMPEG_jll", "Fontconfig_jll", "GLFW_jll", "JLLWrappers", "JpegTurbo_jll", "Libdl", "Libtiff_jll", "Pixman_jll", "Pkg", "Qt5Base_jll", "Zlib_jll", "libpng_jll"]
-git-tree-sha1 = "90acee5c38f4933342fa9a3bbc483119d20e7033"
+git-tree-sha1 = "e14907859a1d3aee73a019e7b3c98e9e7b8b5b3e"
 uuid = "d2c73de3-f751-5644-a686-071e5b155ba9"
-version = "0.57.2+0"
+version = "0.57.3+0"
 
 [[GTK3_jll]]
 deps = ["ATK_jll", "Artifacts", "Cairo_jll", "Fontconfig_jll", "FreeType2_jll", "FriBidi_jll", "Glib_jll", "HarfBuzz_jll", "JLLWrappers", "Libdl", "Libepoxy_jll", "Pango_jll", "Pkg", "Wayland_jll", "Xorg_libX11_jll", "Xorg_libXcomposite_jll", "Xorg_libXcursor_jll", "Xorg_libXdamage_jll", "Xorg_libXext_jll", "Xorg_libXfixes_jll", "Xorg_libXi_jll", "Xorg_libXinerama_jll", "Xorg_libXrandr_jll", "Xorg_libXrender_jll", "at_spi2_atk_jll", "gdk_pixbuf_jll", "iso_codes_jll", "xkbcommon_jll"]
@@ -919,9 +913,9 @@ version = "0.2.4"
 
 [[LAME_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
-git-tree-sha1 = "df381151e871f41ee86cee4f5f6fd598b8a68826"
+git-tree-sha1 = "f6250b16881adf048549549fba48b1161acdac8c"
 uuid = "c1c5ebd0-6772-5130-a774-d5fcae4a789d"
-version = "3.100.0+3"
+version = "3.100.1+0"
 
 [[LLVM]]
 deps = ["CEnum", "Libdl", "Printf", "Unicode"]
@@ -999,9 +993,9 @@ uuid = "29816b5a-b9ab-546f-933c-edad1886dfa8"
 
 [[LibVPX_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
-git-tree-sha1 = "85fcc80c3052be96619affa2fe2e6d2da3908e11"
+git-tree-sha1 = "12ee7e23fa4d18361e7c2cde8f8337d4c3101bc7"
 uuid = "dd192d2f-8180-539f-9fb4-cc70b1dcf69a"
-version = "1.9.0+1"
+version = "1.10.0+0"
 
 [[Libcroco_jll]]
 deps = ["Artifacts", "Glib_jll", "JLLWrappers", "Libdl", "Pkg", "XML2_jll"]
@@ -1215,9 +1209,9 @@ version = "1.1.2"
 
 [[MLJTuning]]
 deps = ["ComputationalResources", "Distributed", "Distributions", "LatinHypercubeSampling", "MLJBase", "MLJModelInterface", "ProgressMeter", "Random", "RecipesBase"]
-git-tree-sha1 = "f8d59a74bcbfe3f9753fad13d02aec6c68ac36a4"
+git-tree-sha1 = "a6c4a8998edc1da80a953b4c86610b1efecf2b66"
 uuid = "03970b2e-30c4-11ea-3135-d1576263f10f"
-version = "0.6.5"
+version = "0.6.6"
 
 [[MUMPS_seq_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "METIS_jll", "OpenBLAS32_jll", "Pkg"]
@@ -1320,9 +1314,9 @@ version = "0.2.19"
 
 [[Mux]]
 deps = ["AssetRegistry", "Base64", "HTTP", "Hiccup", "Pkg", "Sockets", "WebSockets"]
-git-tree-sha1 = "2578b3cd03e4f568f213c7d51b2118f9e81c2617"
+git-tree-sha1 = "82dfb2cead9895e10ee1b0ca37a01088456c4364"
 uuid = "a975b10e-0019-58db-a62f-e48ff68538c9"
-version = "0.7.5"
+version = "0.7.6"
 
 [[NLSolversBase]]
 deps = ["DiffResults", "Distributed", "FiniteDiff", "ForwardDiff"]
@@ -1374,9 +1368,9 @@ version = "1.9.0"
 
 [[Ogg_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
-git-tree-sha1 = "a42c0f138b9ebe8b58eba2271c5053773bde52d0"
+git-tree-sha1 = "7937eda4681660b4d6aeeecc2f7e1c81c8ee4e2f"
 uuid = "e7412a2a-1a6e-54c0-be00-318e2571c051"
-version = "1.3.4+2"
+version = "1.3.5+0"
 
 [[OpenBLAS32_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "Pkg"]
@@ -1396,9 +1390,9 @@ version = "2.3.1+0"
 
 [[OpenSSL_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
-git-tree-sha1 = "71bbbc616a1d710879f5a1021bcba65ffba6ce58"
+git-tree-sha1 = "15003dcb7d8db3c6c857fda14891a539a8f2705a"
 uuid = "458c3c95-2e84-50aa-8efc-19380b2a3a95"
-version = "1.1.1+6"
+version = "1.1.10+0"
 
 [[OpenSpecFun_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "Pkg"]
@@ -1414,9 +1408,9 @@ version = "2.0.1"
 
 [[Opus_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
-git-tree-sha1 = "f9d57f4126c39565e05a2b0264df99f497fc6f37"
+git-tree-sha1 = "51a08fb14ec28da2ec7a927c4337e4332c2a4720"
 uuid = "91d4177d-7536-5919-b921-800302f37372"
-version = "1.3.1+3"
+version = "1.3.2+0"
 
 [[OrderedCollections]]
 git-tree-sha1 = "85f8e6578bf1f9ee0d11e7bb1b1456435479d47c"
@@ -1498,12 +1492,6 @@ deps = ["BeliefUpdaters", "POMDPFiles", "POMDPModelTools", "POMDPPolicies", "POM
 git-tree-sha1 = "8b3c5d85a7b42aaddc9a5c3c85215cfeec658fd0"
 uuid = "a575d7f4-a5df-53f5-8ba4-9d691c1ba8ff"
 version = "0.2.3"
-
-[[POMDPTesting]]
-deps = ["POMDPs", "Random"]
-git-tree-sha1 = "6186037fc901d91703c0aa7ab10c145eeb6d0796"
-uuid = "92e6a534-49c2-5324-9027-86e3c861ab81"
-version = "0.2.5"
 
 [[POMDPToolbox]]
 git-tree-sha1 = "744f7f5a7d24a28223db407d7693c84c52b40a80"
@@ -1780,14 +1768,6 @@ repo-url = "https://github.com/LAMDA-POMDP/RockSample.jl"
 uuid = "de008ff0-c357-11e8-3329-7fe746fe836e"
 version = "0.1.2"
 
-[[Roomba]]
-deps = ["AEMS", "ARDESPOT", "Base64", "BasicPOMCP", "BeliefUpdaters", "Cairo", "Distributions", "FIB", "Graphics", "Gtk", "LinearAlgebra", "MCTS", "MCVI", "NearestNeighbors", "POMCPOW", "POMDPModelTools", "POMDPPolicies", "POMDPSimulators", "POMDPSolve", "POMDPs", "Parameters", "ParticleFilters", "QMDP", "Random", "Reel", "SARSOP", "StaticArrays", "Statistics"]
-git-tree-sha1 = "beda13aa63fdfff86bb844931873741bb3b8e8e6"
-repo-rev = "master"
-repo-url = "https://github.com/LAMDA-POMDP/Roomba.jl"
-uuid = "27451d18-47cd-4e6c-a8d6-4c3b695fab9f"
-version = "0.1.1"
-
 [[RoombaPOMDPs]]
 deps = ["Base64", "Cairo", "Distributions", "Graphics", "Gtk", "NearestNeighbors", "POMCPOW", "POMDPModelTools", "POMDPSimulators", "POMDPs", "Parameters", "ParticleFilters", "Random", "Reel", "StaticArrays", "Statistics"]
 git-tree-sha1 = "bb8a36e76cd3c8646983b0e86a45d7f8f3cb2361"
@@ -1848,9 +1828,9 @@ version = "1.0.3"
 
 [[SentinelArrays]]
 deps = ["Dates", "Random"]
-git-tree-sha1 = "2ce5f07bbc1be0a1b5d5c0e281441d3bf8a7a2e5"
+git-tree-sha1 = "ea6cf57f735e8cb0181c10c3b33a9ccc4b8af6d1"
 uuid = "91c51154-3ec4-41a3-a24f-3f23e20d615c"
-version = "1.3.0"
+version = "1.3.1"
 
 [[Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"

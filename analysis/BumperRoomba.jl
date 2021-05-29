@@ -48,7 +48,7 @@ max_turn_rate = 2.0
 turn_gears = 3
 # action_space = vec([RoombaAct(v, om*max_turn_rate/v) for v in range(1, stop=max_speed, length=speed_gears) for om in [-1, 1]])
 action_space = vec([RoombaAct(v, om) for v in range(0, stop=max_speed, length=speed_gears) for om in range(-max_turn_rate, stop=max_turn_rate, length=turn_gears)])
-m = RoombaPOMDP(sensor=Bumper(), mdp=RoombaMDP(config=1, aspace=action_space, v_max=max_speed))
+# m = RoombaPOMDP(sensor=Bumper(), mdp=RoombaMDP(config=1, aspace=action_space, v_max=max_speed))
 
 # Belief updater
 num_particles = 50000 # number of particles in belief
@@ -106,11 +106,11 @@ grid = StateGrid(range(-25, stop=15, length=9)[2:end-1],
 
 b0 = initialstate(m)
 s0 = rand(b0)
-bounds = solve(BumperRoombaBoundsSolver(true), m)
+# bounds = solve(BumperRoombaBoundsSolver(true), m)
 solver = AdaOPSSolver(bounds=bounds,
                         grid=grid,
                         delta=0.0,
-                        m_min=30,
+                        m_min=10,
                         max_occupied_bins=(5*8-3*6)*4,
                         tree_in_info=true,
                         num_b=100_000,

@@ -1,4 +1,4 @@
-using AA228FinalProject
+using RoombaPOMDPs
 using POMDPs
 using POMDPSimulators
 using MCVI
@@ -20,10 +20,10 @@ belief_updater = RoombaParticleFilter(m, num_particles, v_noise_coefficient, om_
 
 struct LidarRoombaTrivialBound end
 function MCVI.lower_bound(::LidarRoombaTrivialBound, m::RoombaPOMDP, s::RoombaState) 
-    mdp = AA228FinalProject.mdp(m)
+    mdp = RoombaPOMDPs.mdp(m)
     (mdp.contact_pen + mdp.time_pen) / (1 - discount(mdp))
 end
-MCVI.upper_bound(::LidarRoombaTrivialBound, m::RoombaPOMDP, s::RoombaState) = AA228FinalProject.mdp(m).goal_reward
+MCVI.upper_bound(::LidarRoombaTrivialBound, m::RoombaPOMDP, s::RoombaState) = RoombaPOMDPs.mdp(m).goal_reward
 
 solver = MCVISolver(RolloutSimulator(max_steps=100), nothing, 1, 3000, 8, 500, 1000, 5000, 50, LidarRoombaTrivialBound(), LidarRoombaTrivialBound())
 policy = solve(solver, m)

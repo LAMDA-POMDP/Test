@@ -61,15 +61,18 @@ POMDPs.action(p::AlphaVectorPolicy, s::LTState) = action(p, ParticleCollection([
 # For AdaOPS
 Base.convert(::Type{SVector{2,Float64}}, s::LTState) = s.opponent
 grid = StateGrid([2:7;], [2:11;])
-bounds = AdaOPS.IndependentBounds(-20.0, POValue(qmdp), check_terminal=true, consistency_fix_thresh=1e-5)
+# bounds = AdaOPS.IndependentBounds(-20.0, POValue(qmdp), check_terminal=true, consistency_fix_thresh=1e-5)
+blind = BlindPolicySolver(max_iterations=1000)
+qmdp = QMDPSolver(max_iterations=1000)
+bounds = AdaOPS.IndependentBounds(POValue(blind), POValue(qmdp), check_terminal=true, consistency_fix_thresh=1e-5)
 
 despot_bounds = ARDESPOT.IndependentBounds(ARDESPOT.DefaultPolicyLB(qmdp), (p,b)->value(qmdp,b), check_terminal=true, consistency_fix_thresh=1e-5)
 despot_solver = DESPOTSolver(bounds=despot_bounds, K=300, tree_in_info=true, default_action=move_towards_policy, bounds_warnings=false)
 b0 = initialstate(m)
 s0 = rand(b0)
 solver = AdaOPSSolver(bounds=bounds,
-                        delta=0.3,
-                        m_min=30,
+                        delta=0.1,
+                        m_min=10,
                         grid=grid,
                         bounds_warnings=true,
                         tree_in_info=true,

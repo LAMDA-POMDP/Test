@@ -54,7 +54,7 @@ bounds = AdaOPS.IndependentBounds(FOValue(rs_exit), FOValue(mdp), check_terminal
 
 adaops_solver = AdaOPSSolver(bounds=bounds,
                         delta=0.1,
-                        m_min=30,
+                        m_min=100,
                         bounds_warnings=true,
                         tree_in_info=true,
                         default_action=rs_exit 

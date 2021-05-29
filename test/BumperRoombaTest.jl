@@ -30,15 +30,15 @@ end
 # om_noise_coeff = 0.1
 # belief_updater = (m)->RoombaParticleFilter(m, num_particles, v_noise_coeff, om_noise_coeff)
 
-# grid = RectangleGrid(range(-25, stop=15, length=201),
-#                    range(-20, stop=5, length=126),
-#                    range(0, stop=2*pi, length=61),
-#                    range(-1, stop=1, length=3)) # Create the interpolating grid
-
-grid = RectangleGrid(range(-25, stop=15, length=41),
-                   range(-20, stop=5, length=26),
-                   range(0, stop=2*pi, length=13),
+grid = RectangleGrid(range(-25, stop=15, length=121),
+                   range(-20, stop=5, length=76),
+                   range(0, stop=2*pi, length=61),
                    range(-1, stop=1, length=3)) # Create the interpolating grid
+
+# grid = RectangleGrid(range(-25, stop=15, length=41),
+#                    range(-20, stop=5, length=26),
+#                    range(0, stop=2*pi, length=13),
+#                    range(-1, stop=1, length=3)) # Create the interpolating grid
 interp = LocalGIFunctionApproximator(grid)  # Create the local function approximator using the grid
 
 approx_solver = LocalApproximationValueIterationSolver(interp,
@@ -81,7 +81,7 @@ BumperRoombaBoundsSolver() = BumperRoombaBoundsSolver(false)
 
 @everywhere function POMDPs.solve(s::BumperRoombaBoundsSolver, m::BumperPOMDP)
     mdp = RoombaPOMDPs.mdp(m)
-    discrete_m = RoombaPOMDP(sensor=m.sensor, mdp=RoombaMDP(config=mdp.config, aspace=mdp.aspace, v_max=mdp.v_max, sspace=DiscreteRoombaStateSpace(41, 26, 20)))
+    discrete_m = RoombaPOMDP(sensor=m.sensor, mdp=RoombaMDP(config=mdp.config, aspace=mdp.aspace, v_max=mdp.v_max, sspace=DiscreteRoombaStateSpace(121, 76, 61)))
     qmdp = solve(QMDPSolver(verbose=s.verbose), discrete_m)
     blind = solve(BlindPolicySolver(verbose=s.verbose), discrete_m)
     BumperRoombaBounds(qmdp, blind, discrete_m, Int[])
@@ -90,9 +90,9 @@ end
 # For AdaOPS
 @everywhere Base.convert(::Type{SVector{3,Float64}}, s::RoombaState) = SVector{3,Float64}(s.x, s.y, s.theta)
 
-l = 8
-w = 5
-t = 4
+l = 16
+w = 10
+t = 1
 grid = StateGrid(range(-25, stop=15, length=l+1)[2:end-1],
                     range(-20, stop=5, length=w+1)[2:end-1],
                     range(0, stop=2*pi, length=t+1)[2:end-1])

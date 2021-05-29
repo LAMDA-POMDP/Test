@@ -83,31 +83,28 @@ let l = 40, w = 25, t = 12, ζ=0.001, η=0.005, v_noise_coeff=0.03, om_noise_coe
     global belief_updater = (m)->RoombaParticleFilter(m, ceil(Int, KLDSampleSize(convert(Int, 11*l*w*t/20), ζ, η)), v_noise_coeff, om_noise_coeff, KLDResampler(grid, ζ, η))
 end
 
-# grid = RectangleGrid(range(-25, stop=15, length=201),
-#                    range(-20, stop=5, length=126),
-#                    range(0, stop=2*pi, length=61),
-#                    range(0, stop=1, length=2)) # Create the interpolating grid
-grid = RectangleGrid(range(-25, stop=15, length=41),
-                   range(-20, stop=5, length=26),
-                   range(0, stop=2*pi, length=13),
-                   range(-1, stop=1, length=3)) # Create the interpolating grid
-interp = LocalGIFunctionApproximator(grid)  # Create the local function approximator using the grid
-
-approx_solver = LocalApproximationValueIterationSolver(interp,
-                                                        verbose=true,
-                                                        max_iterations=1000)
-
-
-struct LidarRoombaBounds
-    mdp_policy::LocalApproximationValueIterationPolicy
+struct LidarRoombaBounds{M}
+    m::M
+    mdp::ValueIterationPolicy
     values::Vector{Float64}
     time_pen::Float64
     discount::Float64
 end
 
+struct LidarRoombaBoundsSolver <: Solver
+    verbose::Bool
+end
+LidarRoombaBoundsSolver() = LidarRoombaBoundsSolver(false)
+function POMDPs.solve(sol::LidarRoombaBoundsSolver, m::RoombaPOMDP)
+    mdp = RoombaPOMDPs.mdp(m)
+    mdp = RoombaMDP(config=mdp.config, aspace=mdp.aspace, v_max=mdp.v_max, sspace=DiscreteRoombaStateSpace(41, 26, 20))
+    mdp_policy = solve(ValueIterationSolver(verbose=sol.verbose), mdp)
+    LidarRoombaBounds(mdp, mdp_policy, Float64[], mdp.time_pen * (1-discount(m)^19) / (1-discount(m)), discount(m)^20)
+end
+
 function AdaOPS.bounds!(L::Vector{Float64}, U::Vector{Float64}, bd::LidarRoombaBounds, pomdp::P, b::WPFBelief{S,A,O}, W::Vector{Vector{Float64}}, obs::Vector{O}, max_depth::Int, bounds_warning::Bool) where {S,A,O,P<:POMDP{S,A,O},B}
     resize!(bd.values, n_particles(b))
-    broadcast!((s)->value(bd.mdp_policy, s), bd.values, particles(b))
+    broadcast!((s)->value(bd.mdp, convert_s(Int, s, bd.m)), bd.values, particles(b))
     @inbounds for i in eachindex(W)
         U[i] = dot(bd.values, W[i]) / sum(W[i])
         L[i] = bd.time_pen + bd.discount * U[i]
@@ -116,17 +113,16 @@ function AdaOPS.bounds!(L::Vector{Float64}, U::Vector{Float64}, bd::LidarRoombaB
 end
 
 # For AdaOPS
-l = 8
-w = 5
-t = 4
+l = 16
+w = 10
+t = 1
 grid = StateGrid(range(-25, stop=15, length=l+1)[2:end-1],
                     range(-20, stop=5, length=w+1)[2:end-1],
                     range(0, stop=2*pi, length=t+1)[2:end-1])
 
 random_policy = RandomPolicy(m)
 
-mdp = solve(approx_solver, m)
-bounds = LidarRoombaBounds(mdp, Float64[], RoombaPOMDPs.mdp(m).time_pen * (1-discount(m)^19) / (1-discount(m)), discount(m)^20)
+bounds = solve(LidarRoombaBoundsSolver(true), m)
 b0 = initialstate(m)
 s0 = rand(b0)
 solver = AdaOPSSolver(bounds=bounds,
