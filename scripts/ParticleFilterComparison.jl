@@ -17,8 +17,6 @@ using StaticArrays
 using LinearAlgebra
 using BeliefUpdaters
 
-const MAX_SAMPLE_SIZE = 10000
-
 EffectiveSampleSize(b::WeightedParticleBelief) = b.weight_sum^2 / dot(b.weights, b.weights)
 
 TVDistance(b1::DiscreteBelief, b2::AbstractParticleBelief) = weight_sum(b2) == 0.0 ? 1.0 : sum(abs(pdf(b1,s)-pdf(b2,s)) for s in b1.state_list) / 2.0
@@ -173,13 +171,8 @@ function ParticleFilters.update(up::SISFilter, b::WeightedParticleBelief, a, o)
     return WeightedParticleBelief(pm, wm)
 end
 
-# function Random.seed!(f::AdaptiveParticleFilter, seed)
-#     Random.seed!(f.rng, seed)
-#     return f
-# end
-
-rng = MersenneTwister(10000)
-Random.seed!(rng, 10000)
+Random.seed!(70)
+rng = Random.GLOBAL_RNG
 
 # Laser Tag
 n_row = 7
